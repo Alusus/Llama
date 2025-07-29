@@ -1,0 +1,30 @@
+Apm.importFile("Alusus/Memory.alusus");
+Apm.importFile("Srl/Console.alusus");
+import "../Llama.alusus";
+
+use Llama;
+use Srl;
+
+
+def model_path: CharPtr = "tl.gguf";
+
+def mparams: ModelParams = modelDefaultParams();
+def cparams: ContextParams = contextDefaultParams();
+
+
+def model: ptr[Model] = loadModel(model_path, mparams~ptr);
+
+def ctx: ptr[Context] = initContext(model, cparams~ptr);
+def buf: array[Char, 128];
+def n_desc: Int[32] = modelMetaValStr(model, "description", buf~ptr, 128);
+if n_desc > 0 {
+    Console.print(" dec: %.*s\n", n_desc, buf~ptr);
+}
+def n_params: Int[32] = modelMetaValStr(model, "parameters", buf~ptr, 128);
+if n_params > 0 {
+    Console.print("n param   : %s\n", buf~ptr);
+}
+
+free(ctx);
+freeModel(model);
+
