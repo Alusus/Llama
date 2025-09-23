@@ -1,0 +1,70 @@
+import "Srl/Memory";
+import "Srl/Time";
+import "Srl/Nullable";
+import "Srl/Possible";
+
+import "../Llama.alusus";
+
+use Llama;
+use Srl;
+
+def mparams: ModelParams ;
+mparams = modelDefaultParams();
+def model: ptr[Model];
+model = loadModel("tinyllama-1.1b-chat-v1.0.Q2_K.gguf", mparams);
+if model == null {
+    Console.print("\nerror loading model null\n");
+} else {
+    def cparams: ContextParams = contextDefaultParams();
+    def ctx: ptr[Context] = initContext(model, cparams~ptr);
+    if ctx == null {
+        Console.print("error loading Context\n");
+        freeModel(model);
+    } else {
+        def vocab: ptr[Vocab] = modelGetVocab(model);
+        def prompt: String = "Hello, how are you?";
+        def tokens: array[Token,512];
+        def n_tokens: Int[32] =
+            tokenize(vocab, prompt.buf, prompt.getLength(), tokens~ptr, 512, 1, 1);
+        if n_tokens < 0 {
+            Console.print("error in tokenize\n");
+            freeContext(ctx);
+            freeModel(model);
+        }else {
+            def batch: Batch = batchInit(n_tokens, 0, 1);
+            batch.n_tokens = n_tokens;
+            batch.token = tokens~ptr;
+            if decode(ctx, batch) != 0 {
+                Console.print(" llama_decode\n");
+                freeContext(ctx);
+                freeModel(model);
+            } else {
+                def smpl: ptr[Sampler] = samplerGreedy();
+                Console.print("=== Output ===\n");
+                def i: Int[32] = 0;
+                while i < 50 {
+                    def id: Token = samplerSample(smpl, ctx, -1);
+                    if id == -1 { break; }  // eos
+                    def buf: array[Char,128];
+                    def n: Int[32] = detokenize(vocab, id, 1, buf~ptr, 128, 0, 1);
+                    if n > 0 {
+                        buf[n] = '\0';
+                        Console.print("%s", buf~ptr);
+                    }
+                    def nextBatch: Batch = batchInit(1, 0, 1);
+                    nextBatch.n_tokens = 1;
+                    nextBatch.token = &id;
+                    if decode(ctx, nextBatch) != 0 {
+                        Console.print("\nerror in next token\n");
+                        break;
+                    }
+                    i = i + 1;
+                }
+                Console.print("\n==============\n");
+                samplerFree(smpl);
+                freeContext(ctx);
+                freeModel(model);
+            }
+        }
+    }
+}

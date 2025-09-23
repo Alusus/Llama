@@ -61,7 +61,7 @@ module Llama {
         def pos: ptr[Pos];
         def n_seq_id: ptr[Int[32]];
         def seq_id: ptr[ptr[SeqId]];
-        def logits: ptr[Int8];
+        def logits: ptr[Int[8]];
     }
 
     class ModelParams {
@@ -72,7 +72,7 @@ module Llama {
         def main_gpu: Int[32];
         def tensor_split: ptr[Float];
         def progress_callback: llama_progress_callback;
-        def progress_cb_data: ptr;
+        def progress_callback_user_data: ptr;
         def kv_overrides: ptr;
         def vocab_only: Bool;
         def use_mmap: Bool;
@@ -111,6 +111,7 @@ module Llama {
         def op_offload: Bool;
         def swa_full: Bool;
     }
+    class Vocab{}
 
     class QuantizeParams {
         def nthread: Int[32];
@@ -171,15 +172,26 @@ module Llama {
     @expname[llama_attach_threadpool]
     func attachThreadpool(ctx: ptr[Context], tp: ptr, tpBatch: ptr);
 
+    @expname[llama_batch_get_one]
+    func batchGetOne(tokens: ptr[Token], n_tokens: int) : Batch;
+
+    @expname[llama_sampler_sample]
+    func samplerSample(smpl: ptr[Sampler], ctx: ptr[Context], idx : int) : Token;
+
     @expname[llama_detach_threadpool]
     func detachThreadpool(ctx: ptr[Context]);
 
+@expname[llama_token_to_piece]
+    func tokenToPiece(vocab: ptr[Vocab],token : Token , buf : CharsPtr , length : int , lstrip : int , special : bool) : int;
+
+    @expname[llama_vocab_eos]
+    func vocabEos(vocab: ptr[Vocab]) : Token;
 
     @expname[llama_model_default_params]
     func modelDefaultParams(): ModelParams;
 
     @expname[llama_load_model_from_file]
-    func loadModel(path: CharPtr, params: ptr[ModelParams]): ptr[Model];
+    func loadModel(path: CharPtr, params: ModelParams): ptr[Model];
 
     @expname[llama_model_load_from_splits]
     func loadModelSplits(paths: ptr[CharPtr], count: Word, params: ptr[ModelParams]): ptr[Model];
@@ -209,6 +221,16 @@ module Llama {
 
     @expname[llama_max_parallel_sequences]
     func maxParallelSeq(): Word;
+
+    @expname[llama_get_embeddings_seq]
+    func getEmbeddingsSeq(ctx : Context, seqId : SeqId): ptr[float];
+
+    @expname[llama_model_has_encoder]
+    func modelHasEncoder(model : ptr[Model]): Bool;
+
+    @expname[llama_model_has_dencoder]
+    func modelHasDencoder(model : ptr[Model]): Bool;
+
 
     @expname[llama_supports_mmap]
     func supportsMmap(): Bool;
@@ -247,6 +269,9 @@ module Llama {
 
     @expname[llama_model_n_head]
     func modelNHeads(model: ptr[Model]): Int[32];
+
+    @expname[llama_batch_init]
+    func batchInit(n_tokens: int , embd : int , n_seq_max : int): Batch;
 
     @expname[llama_model_n_vocab]
     func modelNVocab(model: ptr[Vocab]): Int[32];
@@ -347,15 +372,18 @@ module Llama {
     func stateGetSize(ctx: ptr[Context]): Word;
 
     @expname[llama_state_get_data]
-    func stateGetData(ctx: ptr[Context], dst: ptr[UInt8], size: Word): Word;
+    func stateGetData(ctx: ptr[Context], dst: ptr[UInt[8]], size: Word): Word;
 
     @expname[llama_state_set_data]
-    func stateSetData(ctx: ptr[Context], src: ptr[UInt8], size: Word): Word;
+    func stateSetData(ctx: ptr[Context], src: ptr[UInt[8]], size: Word): Word;
 
     @expname[llama_state_load_file]
     func stateLoadFile(ctx: ptr[Context], path: CharPtr,
         tokensOut: ptr[Token], cap: Word,
         outCount: ptr[Word]): Bool;
+
+      @expname[llama_model_get_vocab]
+    func modelGetVocab(model: ptr[Model]): ptr[Vocab];
 
     @expname[llama_state_save_file]
     func stateSaveFile(ctx: ptr[Context], path: CharPtr,
@@ -372,6 +400,9 @@ module Llama {
 
     @expname[llama_rm_adapter_lora]
     func removeAdapterLora(ctx: ptr[Context], ad: ptr[Adapter]): Int[32];
+
+    @expname[llama_kv_cache_clear]
+    func kvCacheClear(context: ptr[Context]);
 
     @expname[llama_clear_adapter_lora]
     func clearAdapterLora(ctx: ptr[Context]);
