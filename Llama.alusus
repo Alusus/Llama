@@ -190,7 +190,7 @@ module Llama {
     @expname[llama_model_default_params]
     func modelDefaultParams(): ModelParams;
 
-    @expname[llama_load_model_from_file]
+    @expname[llama_model_load_from_file]
     func loadModel(path: CharPtr, params: ModelParams): ptr[Model];
 
     @expname[llama_model_load_from_splits]

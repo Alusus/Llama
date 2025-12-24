@@ -1,0 +1,305 @@
+import "Srl/Array.alusus";
+import "Srl/String.alusus";
+import "libggml.so";
+
+module Ggml {
+    def Size: alias UInt[64];
+    def Word: alias UInt[32];
+    def Int64: alias Int[64];
+    def Bool: alias Int;
+    def CharPtr: alias Ptr[Char];
+    def PtrVoid: alias Ptr;
+    def Float32: alias Float;
+
+
+
+    class Status {
+        static def ALLOC_FAILED: Int =  - 2;
+        static def FAILED: Int =  - 1;
+        static def SUCCESS: Int = 0;
+        static def ABORTED: Int = 1;
+    }
+
+    class Type {
+        static def F32: Int = 0;
+        static def F16: Int = 1;
+        static def Q4_0: Int = 2;
+        static def Q4_1: Int = 3;
+        static def Q5_0: Int = 6;
+        static def Q5_1: Int = 7;
+        static def Q8_0: Int = 8;
+        static def Q8_1: Int = 9;
+        static def Q2_K: Int = 10;
+        static def Q3_K: Int = 11;
+        static def Q4_K: Int = 12;
+        static def Q5_K: Int = 13;
+        static def Q6_K: Int = 14;
+        static def IQ2_XXS: Int = 16;
+        static def IQ2_XS: Int = 17;
+        static def IQ3_XXS: Int = 18;
+        static def IQ1_S: Int = 19;
+        static def IQ4_NL: Int = 20;
+        static def IQ3_S: Int = 21;
+        static def IQ2_S: Int = 22;
+        static def IQ4_XS: Int = 23;
+        static def I8: Int = 24;
+        static def I16: Int = 25;
+        static def I32: Int = 26;
+        static def I64: Int = 27;
+        static def F64: Int = 28;
+        static def IQ1_M: Int = 29;
+        static def BF16: Int = 30;
+    }
+
+    class FType {
+        static def UNKNOWN: Int =  - 1;
+        static def ALL_F32: Int = 0;
+        static def MOSTLY_F16: Int = 1;
+        static def MOSTLY_Q4_0: Int = 2;
+        static def MOSTLY_Q4_1: Int = 3;
+        static def Q4_1_SOME_F16: Int = 4;
+        static def MOSTLY_Q8_0: Int = 7;
+        static def MOSTLY_Q5_0: Int = 8;
+        static def MOSTLY_Q5_1: Int = 9;
+        static def MOSTLY_Q2_K: Int = 10;
+        static def MOSTLY_Q3_K: Int = 11;
+        static def MOSTLY_Q4_K: Int = 12;
+        static def MOSTLY_Q5_K: Int = 13;
+        static def MOSTLY_Q6_K: Int = 14;
+        static def MOSTLY_IQ2_XXS: Int = 15;
+        static def MOSTLY_IQ2_XS: Int = 16;
+        static def MOSTLY_IQ3_XXS: Int = 17;
+        static def MOSTLY_IQ1_S: Int = 18;
+        static def MOSTLY_IQ4_NL: Int = 19;
+        static def MOSTLY_IQ3_S: Int = 20;
+        static def MOSTLY_IQ2_S: Int = 21;
+        static def MOSTLY_IQ4_XS: Int = 22;
+        static def MOSTLY_IQ1_M: Int = 23;
+        static def MOSTLY_BF16: Int = 24;
+    }
+
+    class Op {
+        static def NONE: Int = 0;
+        static def DUP: Int = 1;
+        static def ADD: Int = 2;
+        static def SUB: Int = 3;
+        static def MUL: Int = 4;
+        static def DIV: Int = 5;
+        static def SQR: Int = 6;
+        static def SQRT: Int = 7;
+        static def LOG: Int = 8;
+        static def SIN: Int = 9;
+        static def COS: Int = 10;
+        static def SUM: Int = 11;
+        static def MEAN: Int = 12;
+        static def ARGMAX: Int = 13;
+    }
+
+
+
+    class AbortCallbackT {
+    }
+
+    class Object {
+    }
+
+    class Context {
+    }
+
+    class CGraph {
+    }
+
+    class InitParams {
+        def memSize: Size;
+        def memBuffer: PtrVoid;
+        def noAlloc: Bool;
+    }
+
+
+
+    @expname[ggml_set_abort_callback]
+    func setAbortCallback(cb: Ptr[func (CharPtr): Void]): Ptr[func (CharPtr): Void];
+
+    @expname[ggml_abort]
+    func abort(file: CharPtr, line: Int64, fmt: CharPtr, ...any): Void;
+
+    @expname[ggml_status_to_string]
+    func statusToString(status: Int): CharPtr;
+
+    @expname[ggml_fp16_to_fp32]
+    func fp16ToFp32(v: UInt[16]): Float32;
+
+    @expname[ggml_fp32_to_fp16]
+    func fp32ToFp16(v: Float32): UInt[16];
+
+    @expname[ggml_fp16_to_fp32_row]
+    func fp16ToFp32Row(src: Ptr[UInt[16]], dst: Ptr[Float32], len: Int64): Void;
+
+    @expname[ggml_fp32_to_fp16_row]
+    func fp32ToFp16Row(src: Ptr[Float32], dst: Ptr[UInt[16]], len: Int64): Void;
+
+    @expname[ggml_fp32_to_bf16]
+    func fp32ToBf16(v: Float32): UInt[16];
+
+    @expname[ggml_bf16_to_fp32]
+    func bf16ToFp32(v: UInt[16]): Float32;
+
+    @expname[ggml_bf16_to_fp32_row]
+    func bf16ToFp32Row(src: Ptr[UInt[16]], dst: Ptr[Float32], len: Int64): Void;
+
+    @expname[ggml_fp32_to_bf16_row]
+    func fp32ToBf16Row(src: Ptr[Float32], dst: Ptr[UInt[16]], len: Int64): Void;
+
+    @expname[ggml_init]
+    func init(params: Ptr[InitParams]): Ptr[Context > ;
+
+    @expname[ggml_free]
+    func free(ctx: Ptr[Context]): Void;
+
+    @expname[ggml_new_tensor_1d]
+    func newTensor1D(ctx: Ptr[Context], t: Int, ne0: Int64): Ptr[Object];
+
+    @expname[ggml_new_tensor_2d]
+    func newTensor2D(ctx: Ptr[Context], t: Int, ne0: Int64, ne1: Int64): Ptr[Object];
+
+    @expname[ggml_new_tensor_3d]
+    func newTensor3D(ctx: Ptr[Context], t: Int, ne0: Int64, ne1: Int64, ne2: Int64): Ptr[Object];
+
+    @expname[ggml_new_tensor_4d]
+    func newTensor4D(ctx: Ptr[Context], t: Int, ne0: Int64, ne1: Int64, ne2: Int64, ne3: Int64): Ptr[Object];
+
+    @expname[ggml_dup]
+    func dup(ctx: Ptr[Context], a: Ptr[Object]): Ptr[Object > ;
+
+    @expname[ggml_add]
+    func add(ctx: Ptr[Context], a: Ptr[Object], b: Ptr[Object]): Ptr[Object > ;
+
+    @expname[ggml_mul]
+    func mul(ctx: Ptr[Context], a: Ptr[Object], b: Ptr[Object]): Ptr[Object > ;
+
+    @expname[ggml_sub]
+    func sub(ctx: Ptr[Context], a: Ptr[Object], b: Ptr[Object]): Ptr[Object > ;
+
+    @expname[ggml_div]
+    func div(ctx: Ptr[Context], a: Ptr[Object], b: Ptr[Object]): Ptr[Object > ;
+
+
+
+    @expname[ggml_build_forward]
+    func buildForward(ctx: Ptr[Context], graph: Ptr[CGraph], leaf: Ptr[Object], nThreads: Int): Ptr[CGraph > ;
+
+    @expname[ggml_graph_compute]
+    func graphCompute(ctx: Ptr[Context], graph: Ptr[CGraph], nThreads: Int): Void;
+
+    @expname[ggml_graph_plan]
+    func graphPlan(ctx: Ptr[Context], graph: Ptr[CGraph], method: Int): Int;
+
+    @expname[ggml_graph_reset]
+    func graphReset(graph: Ptr[CGraph > ): Void;
+
+    @expname[ggml_tensor_set_name]
+    func tensorSetName(t: Ptr[Object], name: CharPtr): Void;
+
+    @expname[ggml_tensor_get_name]
+    func tensorGetName(t: Ptr[Object], buf: CharPtr, bufLen: Int): Void;
+
+    @expname[ggml_print_system_info]
+    func printSystemInfo(): CharPtr;
+
+    @expname[ggml_log]
+    func log(level: Int, fmt: CharPtr): Void;
+
+
+
+    @expname[ggml_sum]
+    func sum(ctx: Ptr[Context], a: Ptr[Object]): Ptr[Object];
+
+    @expname[ggml_mean]
+    func mean(ctx: Ptr[Context], a: Ptr[Object]): Ptr[Object];
+
+    @expname[ggml_argmax]
+    func argmax(ctx: Ptr[Context], a: Ptr[Object]): Ptr[Object];
+
+    @expname[ggml_norm]
+    func norm(ctx: Ptr[Context], a: Ptr[Object]): Ptr[Object];
+
+    @expname[ggml_rms_norm]
+    func rmsNorm(ctx: Ptr[Context], a: Ptr[Object], eps: Float32): Ptr[Object];
+
+
+    @expname[ggml_mul_mat]
+    func mulMat(ctx: Ptr[Context], a: Ptr[Object], b: Ptr[Object]): Ptr[Object];
+
+
+
+    @expname[ggml_scale]
+    func scale(ctx: Ptr[Context], a: Ptr[Object], alpha: Float32): Ptr[Object];
+
+    @expname[ggml_set]
+    func set(ctx: Ptr[Context], a: Ptr[Object], value: Float32): Ptr[Object];
+
+    @expname[ggml_cpy]
+    func cpy(ctx: Ptr[Context], src: Ptr[Object], dst: Ptr[Object]): Ptr[Object];
+
+    @expname[ggml_cont]
+    func cont(ctx: Ptr[Context], a: Ptr[Object]): Ptr[Object];
+
+    @expname[ggml_reshape]
+    func reshape(ctx: Ptr[Context], a: Ptr[Object],
+        ne: Ptr[Int64], nDim: Int): Ptr[Object];
+
+    @expname[ggml_view]
+    func view(ctx: Ptr[Context], a: Ptr[Object],
+        ne: Ptr[Int64], nDim: Int,
+        offset: Int64): Ptr[Object];
+
+    @expname[ggml_permute]
+    func permute(ctx: Ptr[Context], a: Ptr[Object],
+        ne: Ptr[Int64], nDim: Int): Ptr[Object];
+
+    @expname[ggml_transpose]
+    func transpose(ctx: Ptr[Context], a: Ptr[Object]): Ptr[Object];
+
+
+
+    @expname[ggml_get_rows]
+    func getRows(ctx: Ptr[Context], a: Ptr[Object],
+        rows: Ptr[Int64], nRows: Int): Ptr[Object];
+
+    @expname[ggml_set_rows]
+    func setRows(ctx: Ptr[Context], a: Ptr[Object],
+        rows: Ptr[Int64], nRows: Int,
+        b: Ptr[Object]): Ptr[Object];
+
+
+
+    @expname[ggml_diag]
+    func diag(ctx: Ptr[Context], a: Ptr[Object]): Ptr[Object];
+
+    @expname[ggml_diag_mask_inf]
+    func diagMaskInf(ctx: Ptr[Context], a: Ptr[Object], nPast: Int32): Ptr[Object > ;
+
+    @expname[ggml_diag_mask_zero]
+    func diagMaskZero(ctx: Ptr[Context], a: Ptr[Object], nPast: Int32): Ptr[Object];
+
+
+
+    @expname[ggml_soft_max]
+    func softMax(ctx: Ptr[Context], a: Ptr[Object]): Ptr[Object > ;
+
+    @expname[ggml_rope]
+    func rope(ctx: Ptr[Context], a: Ptr[Object],
+        nPast: Int32, nDims: Int32): Ptr[Object > ;
+
+    @expname[ggml_pad]
+    func pad(ctx: Ptr[Context], a: Ptr[Object],
+        npad: Ptr[Int64], nDim: Int,
+        mode: Int32): Ptr[Object > ;
+
+    @expname[ggml_roll]
+    func roll(ctx: Ptr[Context], a: Ptr[Object],
+        shift: Int32, axis: Int32): Ptr[Object];
+
+     }
+
+    
