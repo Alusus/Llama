@@ -1,0 +1,17 @@
+@merge module Llama {
+    class Batch {
+        def nTokens: Int;
+        def token: ref[array[Token]];
+        def embd: ref[array[Float]];
+        def pos: ref[Pos];
+        def nSeqId: ref[Int];
+        def seqId: ref[ref[SeqId]];
+        def output: ref[Int[8]];
+
+        @expname[llama_batch_get_one]
+        func getOne(tokens: ref[array[Token]], nTokens: Int): Batch;
+
+        @expname[llama_batch_init]
+        func init(nTokens: Int, embd: Int, nSeqMax: Int): Batch;
+    }
+}

@@ -1,0 +1,127 @@
+@merge module Llama {
+    class Context {
+        class Params {
+            def nCtx: Word;
+            def nBatch: Word;
+            def nUbatch: Word;
+            def nSeqMax: Word;
+            def nThreads: Int;
+            def nThreadsBatch: Int;
+            def ropeScalingType: RopeScalingType;
+            def poolingType: PoolingType;
+            def attentionType: AttentionType;
+            def flashAttnType: FlashAttnType;
+            def ropeFreqBase: Float;
+            def ropeFreqScale: Float;
+            def yarnExtFactor: Float;
+            def yarnAttnFactor: Float;
+            def yarnBetaFast: Float;
+            def yarnBetaSlow: Float;
+            def yarnOrigCtx: Word;
+            def defragThold: Float;
+            def cbEval: ptr[function (tensor: ref[Ggml.Tensor], ask: Bool, userData: ptr): Bool];
+            def cbEvalData: ptr;
+            def typeK: Ggml.Type;
+            def typeV: Ggml.Type;
+            def abortCb: ptr[function (data: ptr): Bool];
+            def abortCbData: ptr;
+            def embeddings: Bool;
+            def offloadKqv: Bool;
+            def noPerf: Bool;
+            def opOffload: Bool;
+            def swaFull: Bool;
+            def kvUnified: Bool;
+            def samplers: ref[array[SamplerSeqConfig]];
+            def nSamplers: ArchWord;
+        }
+
+        @expname[llama_context_default_params]
+        func getDefaultParams(): Params;
+
+        @expname[llama_init_from_model]
+        func initFromModel(model: ref[Model], params: Params): ref[Context];
+
+        @expname[llama_free]
+        func free(ctx: ref[Context]);
+
+        @expname[llama_attach_threadpool]
+        handler this.attachThreadpool(tp: ref[Ggml.Threadpool], tpBatch: ref[Ggml.Threadpool]);
+
+        @expname[llama_detach_threadpool]
+        handler this.detachThreadpool();
+
+        @expname[llama_get_embeddings_seq]
+        handler this.getEmbeddingsSeq(seqId: SeqId): ref[array[Float]];
+
+        @expname[llama_get_model]
+        handler this.getModel(): ref[Model];
+
+        @expname[llama_n_ctx]
+        handler this.nCtx: Word;
+
+        @expname[llama_n_batch]
+        handler this.nBatch: Word;
+
+        @expname[llama_n_ubatch]
+        handler this.nUbatch: Word;
+
+        @expname[llama_n_seq_max]
+        handler this.nSeqMax: Word;
+
+        @expname[llama_get_memory]
+        handler this.getMemory(): ptr[Memory];
+
+        @expname[llama_pooling_type]
+        handler this._poolingType: Int;
+        handler this.poolingType: PoolingType {
+            return PoolingType()~use_in(self) { this._poolingType };
+        }
+
+        @expname[llama_encode]
+        handler this.encode(batch: Batch): Int;
+
+        @expname[llama_decode]
+        handler this.decode(batch: Batch): Int;
+
+        @expname[llama_get_logits_ith]
+        handler this.getLogitsIth(i :Int): ref[array[Float]];
+
+        @expname[llama_get_embeddings_ith]
+        handler this.getEmbeddingsIth(i :Int): ref[array[Float]];
+
+        @expname[llama_state_get_size]
+        handler this.stateSize: ArchWord;
+
+        @expname[llama_state_get_data]
+        handler this.stateGetData(dst: ref[array[Word[8]]], size: ArchWord): ArchWord;
+
+        @expname[llama_state_set_data]
+        handler this.stateSetData(src: ref[array[Word[8]]], size: ArchWord): ArchWord;
+
+        @expname[llama_state_load_file]
+        handler this.stateLoadFile(
+            path: CharsPtr, tokensOut: ref[array[Token]], cap: ArchWord, outCount: ref[ArchWord]
+        ): Bool;
+
+        @expname[llama_state_save_file]
+        handler this.stateSaveFile(path: CharsPtr, tokens: ref[array[Token]], count: ArchWord): Bool;
+
+        @expname[llama_set_adapter_lora]
+        handler this.setAdapterLora(ad: ref[Adapter], scale: Float): Int;
+
+        @expname[llama_rm_adapter_lora]
+        handler this.removeAdapterLora(ad: ref[Adapter]): Int;
+
+        @expname[llama_clear_adapter_lora]
+        handler this.clearAdapterLora();
+
+        @expname[llama_perf_context]
+        handler this.perfContext: PerfContextData;
+
+        @expname[llama_perf_context_print]
+        handler this.perfContextPrint();
+
+        @expname[llama_perf_context_reset]
+        handler this.perfContextReset();
+    }
+}

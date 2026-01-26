@@ -1,0 +1,91 @@
+import "Srl/Console";
+import "Srl/Fs";
+import "Apm";
+Apm.importFile("Alusus/Llama");
+use Srl;
+use Llama;
+
+// Download the model from https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/blob/main/tinyllama-1.1b-chat-v1.0.Q2_K.gguf
+// This is a tiny model, so expect a lot of hallucination
+
+Ggml.Backend.cpuLoad();
+Ggml.Backend.vkLoad();
+
+def model: ref[Model](Model.load("tinyllama-1.1b-chat-v1.0.Q2_K.gguf", Model.getDefaultParams()));
+if model~ptr == null {
+    Console.print("\nerror loading model null\n");
+} else {
+    def ctx: ref[Context](Context.initFromModel(model, Context.getDefaultParams()));
+    if ctx~ptr == null {
+        Console.print("error loading Context\n");
+        Model.free(model);
+    } else {
+        Console.print("=== Start ===\n");
+        Console.print(
+            "This is an auto-completion example. It uses a tiny model, so expect a lot of hallucinations. "
+            "Enter a word, or the beginning of a sentence and let the model auto complete.\n"
+        );
+        Console.print("Your prompt: ");
+        def prompt: array[Char, 1024];
+        Console.getString(prompt~ptr, prompt~size);
+        def tokens: array[Token, 512];
+        def nTokens: Int = tokenize(model.vocab, prompt~ptr, String.getLength(prompt~ptr), tokens, 512, 1, 1);
+        if nTokens < 0 {
+            Console.print("error in tokenize\n");
+            Context.free(ctx);
+            Model.free(model);
+        } else {
+            def batch: Batch = Batch.getOne(tokens, nTokens);
+            if ctx.decode(batch) != 0 {
+                Console.print("llama_decode\n");
+                Context.free(ctx);
+                Model.free(model);
+            } else {
+                // Create a sampler chain with penalties, top-k, top-p, and random sampling
+                def chainParams: Sampler.ChainParams;
+                chainParams.noPerf = true;
+                def sampler: ref[Sampler](Sampler.chainInit(chainParams));
+                // Repetition penalty: penalize last 64 tokens, repeat penalty 1.1
+                sampler.chainAdd(Sampler.initPenalties(64, 1.1, 0.0, 0.0));
+                sampler.chainAdd(Sampler.initTopK(40));
+                sampler.chainAdd(Sampler.initTopP(0.6, 1));
+                sampler.chainAdd(Sampler.initDist(0));
+                Console.print("=== Output ===\n");
+                Console.print("%s ", prompt~ptr);
+                def generatedTokens: array[Token, 512];
+                def numGenerated: Int = 0;
+                def prevLen: Int = 0;
+                def i: Int = 0;
+                while i < 500 {
+                    def id: array[Token, 1];
+                    id(0) = sampler.sample(ctx, -1);
+                    if model.vocab.isEog(id(0)) break;
+                    // TinyLlama specific stop tokens (EOS and special tokens, but not newline)
+                    if id(0) == 2 || id(0) == 32000 || id(0) == 32001 break;
+                    generatedTokens(numGenerated) = id(0);
+                    ++numGenerated;
+                    // Detokenize all tokens together to get correct spacing
+                    def buf: array[Char, 4096];
+                    def n: Int = detokenize(model.vocab, generatedTokens, numGenerated, buf~ptr, 2048, 0, 0);
+                    if n > prevLen {
+                        // Print only the new characters
+                        buf(n) = 0;
+                        Console.print("%s", buf(prevLen)~ptr);
+                        prevLen = n;
+                    }
+                    def nextBatch: Batch = Batch.getOne(id, 1);
+                    if ctx.decode(nextBatch) != 0 {
+                        Console.print("\nerror in next token\n");
+                        break;
+                    }
+                    Fs.flush(0);
+                    ++i;
+                }
+                Console.print("\n==============\n");
+                Sampler.free(sampler);
+                Context.free(ctx);
+                Model.free(model);
+            }
+        }
+    }
+}

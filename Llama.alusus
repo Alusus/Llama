@@ -1,0 +1,187 @@
+import "Srl/Memory.alusus";
+import "Srl/Array.alusus";
+import "Srl/String.alusus";
+import "Apm";
+Apm.importFile("Alusus/Ggml");
+
+CharsPtr(Srl.System.getEnv("GGML_USE_VULKAN")).{
+    if this != 0 and Srl.String.isEqual(this, "1") {
+        Core.importFile("Bin/libllama-vulkan.so");
+    } else {
+        Core.importFile("Bin/libllama-cpu.so");
+    }
+}
+
+import "Llama/Context";
+import "Llama/Batch";
+import "Llama/Sampler";
+import "Llama/Vocab";
+import "Llama/Model";
+import "Llama/Adapter";
+import "Llama/Memory";
+
+@merge module Llama {
+    // Basic Types
+
+    def Token: alias Int;
+    def Pos: alias Int;
+    def SeqId: alias Int;
+    def ProgressCallback: alias ptr[function (progress: Float, userData: ptr): Bool];
+
+    // Enums
+
+    class SplitMode {
+        Srl.setupIntEnum[];
+        Srl.enumIntValue[NONE,  0]; // single GPU
+        Srl.enumIntValue[LAYER, 1]; // split layers and KV across GPUs
+        Srl.enumIntValue[ROW,   2]; // split layers and KV across GPUs, use tensor parallelism if supported
+    }
+
+    class RopeScalingType {
+        Srl.setupIntEnum[];
+        Srl.enumIntValue[UNSPECIFIED, -1];
+        Srl.enumIntValue[NONE, 0];
+        Srl.enumIntValue[LINEAR, 1];
+        Srl.enumIntValue[YARN, 2];
+        Srl.enumIntValue[LONGROPE, 3];
+        Srl.enumIntValue[MAX_VALUE, 3];
+    }
+
+    class PoolingType {
+        Srl.setupIntEnum[];
+        Srl.enumIntValue[UNSPECIFIED, -1];
+        Srl.enumIntValue[NONE, 0];
+        Srl.enumIntValue[MEAN, 1];
+        Srl.enumIntValue[CLS, 2];
+        Srl.enumIntValue[LAST, 3];
+        Srl.enumIntValue[RANK, 4];
+    }
+
+    class AttentionType {
+        Srl.setupIntEnum[];
+        Srl.enumIntValue[UNSPECIFIED, -1];
+        Srl.enumIntValue[CAUSAL, 0];
+        Srl.enumIntValue[NON_CAUSAL, 1];
+    }
+
+    class FlashAttnType {
+        Srl.setupIntEnum[];
+        Srl.enumIntValue[AUTO, -1];
+        Srl.enumIntValue[DISABLED, 0];
+        Srl.enumIntValue[ENABLED, 1];
+    };
+
+    // Structures
+
+    class TokenData {
+        def id: Token;
+        def logit: Float;
+        def p: Float;
+    }
+
+    class TokenDataArray {
+        def data: ptr[TokenData];
+        def size: ArchWord;
+        def selected: Int[64];
+        def sorted: Bool;
+    }
+
+    class SamplerSeqConfig {
+        def seqId: SeqId;
+        def sampler: ref[Sampler];
+    }
+
+    class ChatMessage {
+        def role: CharsPtr;
+        def content: CharsPtr;
+    }
+
+    class PerfContextData {
+        def tStartMs: Float[64];
+        def tLoadMs: Float[64];
+        def tPEvalMs: Float[64];
+        def tEvalMs: Float[64];
+        def nPEval: Int;
+        def nEval: Int;
+        def nReused: Int;
+    }
+
+    class PerfSamplerData {
+        def tSampleMs: Float[64];
+        def nSample: Int;
+    }
+
+    class TensorBuftOverride {
+        def pattern: CharsPtr;
+        def buft: ref[Ggml.BackendBufferType];
+    }
+
+    // Constants
+
+    def DEFAULT_SEED: Int(0xFFFFFFFF);
+    def TOKEN_NULL: Int(-1);
+
+    // Global Functions
+
+    @expname[llama_backend_init]
+    func backendInit();
+
+    @expname[llama_backend_free]
+    func backendFree();
+
+    @expname[llama_numa_init]
+    func _numaInit(numaStrategy: Int);
+    func numaInit(numaStrategy: Ggml.NumaStrategy) {
+        _numaInit(numaStrategy.val);
+    }
+
+    @expname[llama_time_us]
+    func timeUs(): Int[64];
+
+    @expname[llama_max_devices]
+    func maxDevices(): ArchWord;
+
+    @expname[llama_max_parallel_sequences]
+    func maxParallelSequences(): ArchWord;
+
+    @expname[llama_supports_mmap]
+    func supportsMmap(): Bool;
+
+    @expname[llama_supports_mlock]
+    func supportsMlock(): Bool;
+
+    @expname[llama_supports_gpu_offload]
+    func supportsGpuOffload(): Bool;
+
+    @expname[llama_supports_rpc]
+    func supportsRpc(): Bool;
+
+    @expname[llama_tokenize]
+    func tokenize(
+        vocab: ref[Vocab], text: CharsPtr, textLen: Int,
+        tokens: ref[array[Token]], nTokensMax: Int,
+        addSpecial: Bool, parseSpecial: Bool
+    ): Int;
+
+    @expname[llama_detokenize]
+    func detokenize(
+        vocab: ref[Vocab], tokens: ref[array[Token]], nTokens: Int,
+        text: CharsPtr, textLenMax: Int,
+        removeSpecial: Bool, unparseSpecial: Bool
+    ): Int;
+
+    @expname[llama_chat_apply_template]
+    func chatApplyTemplate(
+        tmpl: CharsPtr, chat: ref[array[ChatMessage]], nMsg: ArchWord,
+        addAssistant: Bool, buf: CharsPtr, bufLen: Int
+    ): Int;
+
+    @expname[llama_chat_builtin_templates]
+    func chatBuiltinTemplates(out: ref[CharsPtr], len: ArchWord): Int;
+
+    @expname[llama_log_set]
+    func logSet(cb: ptr[function (level: Int, text: CharsPtr, userData: ptr)], userData: ptr);
+
+    @expname[llama_print_system_info]
+    func printSystemInfo(): CharsPtr;
+}

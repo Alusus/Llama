@@ -1,0 +1,75 @@
+@merge module Llama {
+    class Sampler {
+        class ChainParams {
+            def noPerf: Bool;
+        }
+
+        @expname[llama_sampler_init]
+        func init(iface: ptr, ctx: ptr): ref[Sampler];
+
+        @expname[llama_sampler_chain_init]
+        func chainInit(params: ChainParams): ref[Sampler];
+
+        @expname[llama_sampler_init_greedy]
+        func initGreedy(): ref[Sampler];
+
+        @expname[llama_sampler_init_dist]
+        func initDist(seed: Word): ref[Sampler];
+
+        @expname[llama_sampler_init_top_k]
+        func initTopK(k: Int): ref[Sampler];
+
+        @expname[llama_sampler_init_top_p]
+        func initTopP(p: Float, minKeep: ArchWord): ref[Sampler];
+
+        @expname[llama_sampler_init_penalties]
+        func initPenalties(
+            penaltyLastN: Int,      // last n tokens to penalize (0 = disable, -1 = context size)
+            penaltyRepeat: Float,   // 1.0 = disabled
+            penaltyFreq: Float,     // 0.0 = disabled
+            penaltyPresent: Float   // 0.0 = disabled
+        ): ref[Sampler];
+
+        @expname[llama_sampler_clone]
+        func clone(s: ref[Sampler]): ref[Sampler];
+
+        @expname[llama_sampler_free]
+        func free(s: ref[Sampler]);
+
+        @expname[llama_sampler_reset]
+        handler this.reset();
+
+        @expname[llama_sampler_sample]
+        handler this.sample(ctx: ref[Context], idx: Int): Token;
+
+        @expname[llama_sampler_name]
+        handler this.name: CharsPtr;
+
+        @expname[llama_sampler_accept]
+        handler this.accept(token: Token);
+
+        @expname[llama_sampler_apply]
+        handler this.apply(cand: ref[TokenDataArray]);
+
+        @expname[llama_sampler_chain_add]
+        handler this.chainAdd(s: ref[Sampler]);
+
+        @expname[llama_sampler_chain_get]
+        handler this.chainGet(idx: Int): ref[Sampler];
+
+        @expname[llama_sampler_chain_n]
+        handler this.chainCount: Int;
+
+        @expname[llama_sampler_chain_remove]
+        handler this.chainRemove(idx: Int): ref[Sampler];
+
+        @expname[llama_perf_sampler]
+        handler this.perfSampler: PerfSamplerData;
+
+        @expname[llama_perf_sampler_print]
+        handler this.perfSamplerPrint();
+
+        @expname[llama_perf_sampler_reset]
+        handler this.perfSamplerReset();
+    }
+}
