@@ -1,70 +1,294 @@
+import "Srl/Console";
+import "Srl/Fs";
+import "Srl/String";
+import "Srl/Array";
 import "Srl/Memory";
-import "Srl/Time";
-import "Srl/Nullable";
-import "Srl/Possible";
-
-import "../Llama.alusus";
-
-use Llama;
+import "Apm";
+Apm.importFile("Alusus/Llama");
 use Srl;
+use Llama;
 
-def mparams: ModelParams ;
-mparams = modelDefaultParams();
-def model: ptr[Model];
-model = loadModel("tinyllama-1.1b-chat-v1.0.Q2_K.gguf", mparams);
-if model == null {
-    Console.print("\nerror loading model null\n");
+// Download the model from https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/blob/main/tinyllama-1.1b-chat-v1.0.Q2_K.gguf
+// This is a tiny model, so expect a lot of hallucination
+
+Ggml.Backend.cpuLoad();
+Ggml.Backend.vkLoad();
+
+def model: ref[Model](Model.load("tinyllama-1.1b-chat-v1.0.Q2_K.gguf", Model.getDefaultParams()));
+if model~ptr == null {
+    Console.print("\nerror loading model\n");
 } else {
-    def cparams: ContextParams = contextDefaultParams();
-    def ctx: ptr[Context] = initContext(model, cparams~ptr);
-    if ctx == null {
+    // Increase context size for longer conversations
+    def ctxParams: Context.Params = Context.getDefaultParams();
+    ctxParams.nCtx = 2048;
+    def ctx: ref[Context](Context.initFromModel(model, ctxParams));
+    if ctx~ptr == null {
         Console.print("error loading Context\n");
-        freeModel(model);
+        Model.free(model);
     } else {
-        def vocab: ptr[Vocab] = modelGetVocab(model);
-        def prompt: String = "Hello, how are you?";
-        def tokens: array[Token,512];
-        def n_tokens: Int[32] =
-            tokenize(vocab, prompt.buf, prompt.getLength(), tokens~ptr, 512, 1, 1);
-        if n_tokens < 0 {
-            Console.print("error in tokenize\n");
-            freeContext(ctx);
-            freeModel(model);
-        }else {
-            def batch: Batch = batchInit(n_tokens, 0, 1);
-            batch.n_tokens = n_tokens;
-            batch.token = tokens~ptr;
-            if decode(ctx, batch) != 0 {
-                Console.print(" llama_decode\n");
-                freeContext(ctx);
-                freeModel(model);
-            } else {
-                def smpl: ptr[Sampler] = samplerGreedy();
-                Console.print("=== Output ===\n");
-                def i: Int[32] = 0;
-                while i < 50 {
-                    def id: Token = samplerSample(smpl, ctx, -1);
-                    if id == -1 { break; }  // eos
-                    def buf: array[Char,128];
-                    def n: Int[32] = detokenize(vocab, id, 1, buf~ptr, 128, 0, 1);
-                    if n > 0 {
-                        buf[n] = '\0';
-                        Console.print("%s", buf~ptr);
-                    }
-                    def nextBatch: Batch = batchInit(1, 0, 1);
-                    nextBatch.n_tokens = 1;
-                    nextBatch.token = &id;
-                    if decode(ctx, nextBatch) != 0 {
-                        Console.print("\nerror in next token\n");
+        // Create sampler chain with penalties to avoid repetition
+        def chainParams: Sampler.ChainParams;
+        chainParams.noPerf = true;
+        def sampler: ref[Sampler](Sampler.chainInit(chainParams));
+        sampler.chainAdd(Sampler.initPenalties(64, 1.1, 0.0, 0.0));
+        sampler.chainAdd(Sampler.initTopK(40));
+        sampler.chainAdd(Sampler.initTopP(0.9, 1));
+        sampler.chainAdd(Sampler.initDist(0));
+
+        // Chat history storage
+        def messages: Array[ChatMessage];
+        def messageContents: Array[String];  // Keep strings alive
+
+        Console.print("=== TinyLlama Chat ===\n");
+        Console.print("This is a chat example. It uses a tiny model, so expect a lot of hallucinations.\n");
+        Console.print("Type your message and press Enter. Type 'quit' to exit.\n\n");
+
+        while true {
+            Console.print("You: ");
+            Fs.flush(0);
+
+            // Read user input
+            def inputBuf: array[Char, 1024];
+            Console.getString(inputBuf~ptr, inputBuf~size);
+
+            def userInput: String(inputBuf~ptr);
+            if userInput == "quit" || userInput == "exit" break;
+            if userInput.getLength() == 0 continue;
+
+            // Add user message to history
+            messageContents.add(userInput);
+            def userMsg: ChatMessage;
+            userMsg.role = "user";
+            userMsg.content = messageContents(messageContents.getLength() - 1).buf;
+            messages.add(userMsg);
+
+            // Apply chat template
+            def templateBuf: array[Char, 4096];
+            def templateLen: Int = chatApplyTemplate(
+                0,  // Use model's default template
+                messages.buf, messages.getLength(),
+                true,  // Add assistant prompt
+                templateBuf~ptr, 4096
+            );
+
+            if templateLen < 0 {
+                Console.print("Error applying chat template\n");
+                continue;
+            }
+
+            // Tokenize the formatted prompt
+            def tokens: array[Token, 2048];
+            def nTokens: Int = tokenize(model.vocab, templateBuf~ptr, templateLen, tokens, 2048, true, true);
+            if nTokens < 0 {
+                Console.print("Error tokenizing\n");
+                continue;
+            }
+
+            // Decode prompt tokens
+            def batch: Batch = Batch.getOne(tokens, nTokens);
+            if ctx.decode(batch) != 0 {
+                // Context might be full, try clearing memory and retry
+                Console.print("[Context full, clearing history...]\n");
+                ctx.getMemory()~cnt.clear(true);
+                messages.clear();
+                messageContents.clear();
+                // Re-add just the current message
+                messageContents.add(userInput);
+                def newUserMsg: ChatMessage;
+                newUserMsg.role = "user";
+                newUserMsg.content = messageContents(0).buf;
+                messages.add(newUserMsg);
+                // Re-apply template and tokenize
+                templateLen = chatApplyTemplate(0, messages.buf, messages.getLength(), true, templateBuf~ptr, 4096);
+                nTokens = tokenize(model.vocab, templateBuf~ptr, templateLen, tokens, 2048, true, true);
+                batch = Batch.getOne(tokens, nTokens);
+                if ctx.decode(batch) != 0 {
+                    Console.print("Error decoding prompt\n");
+                    continue;
+                }
+            }
+
+            // Generate response
+            Console.print("Assistant: ");
+            def generatedTokens: array[Token, 512];
+            def numGenerated: Int = 0;
+            def safeLen: Int = 0;      // Length of text confirmed safe to print
+            def printedLen: Int = 0;   // Length of text already printed
+            def hitStopSequence: Bool = false;
+            def lastPunctuationType: Char = 0;  // Track last punctuation (. ! ?)
+
+            def i: Int = 0;
+            while i < 256 {
+                def id: array[Token, 1];
+                id(0) = sampler.sample(ctx, -1);
+
+                // Check for end of generation
+                if model.vocab.isEog(id(0)) break;
+
+                // Check if this individual token is a control token
+                def tokenBuf: array[Char, 64];
+                def tokenLen: Int = detokenize(model.vocab, id, 1, tokenBuf~ptr, 64, 0, 0);
+                if tokenLen > 0 {
+                    tokenBuf(tokenLen) = 0;
+                    def tokenStr: String(tokenBuf~ptr);
+                    // If this token starts a control sequence, stop before adding it
+                    if tokenStr.find("<|") != -1 || tokenStr.find("</s>") != -1 {
+                        hitStopSequence = true;
                         break;
                     }
-                    i = i + 1;
                 }
-                Console.print("\n==============\n");
-                samplerFree(smpl);
-                freeContext(ctx);
-                freeModel(model);
+
+                generatedTokens(numGenerated) = id(0);
+                ++numGenerated;
+
+                // Detokenize all tokens together for correct spacing
+                def buf: array[Char, 4096];
+                def n: Int = detokenize(model.vocab, generatedTokens, numGenerated, buf~ptr, 4096, 0, 0);
+                buf(n) = 0;
+
+                // Check for stop sequences in accumulated text
+                def currentText: String(buf~ptr);
+                def stopPos: Int = currentText.find("<|");
+                if stopPos == -1 stopPos = currentText.find("</s>");
+
+                if stopPos != -1 {
+                    // Found stop sequence - only print up to it
+                    safeLen = stopPos;
+                    hitStopSequence = true;
+                    break;
+                }
+
+                // Check for double newline - often indicates model trying to start new turn
+                def doubleNewline: Int = currentText.find("\n\n");
+                if doubleNewline != -1 && doubleNewline > 20 {
+                    // Stop at the double newline
+                    safeLen = doubleNewline;
+                    hitStopSequence = true;
+                    break;
+                }
+
+                // Find last safe point (end of sentence)
+                def j: Int = n - 1;
+                while j > safeLen {
+                    def c: Char = buf(j);
+                    if (c == '.' || c == '!' || c == '?') && j > 0 {
+                        // Make sure it's not a decimal point or abbreviation
+                        def prev: Char = buf(j - 1);
+                        if prev >= '0' && prev <= '9' {
+                            // Likely decimal, skip
+                            --j;
+                            continue;
+                        }
+
+                        // If we already had a statement ending (.) and now see a question (?),
+                        // this is likely the model hallucinating a follow-up question - stop here
+                        if c == '?' && lastPunctuationType == '.' && safeLen > 0 {
+                            hitStopSequence = true;
+                            break;
+                        }
+
+                        // If at end of buffer or followed by whitespace, it's a safe point
+                        def isSafePoint: Bool = false;
+                        if j + 1 >= n {
+                            isSafePoint = true;
+                        } else {
+                            def next: Char = buf(j + 1);
+                            if next == ' ' || next == '\n' || next == '\r' {
+                                isSafePoint = true;
+                            }
+                        }
+
+                        if isSafePoint {
+                            safeLen = j + 1;
+                            lastPunctuationType = c;
+                            break;
+                        }
+                    }
+                    --j;
+                }
+
+                // Break out of main loop if we detected a hallucination
+                if hitStopSequence break;
+
+                // Print safe text
+                if safeLen > printedLen {
+                    def printBuf: array[Char, 4096];
+                    Srl.Memory.copy(printBuf~ptr, buf~ptr, safeLen);
+                    printBuf(safeLen) = 0;
+                    Console.print("%s", printBuf(printedLen)~ptr);
+                    printedLen = safeLen;
+                }
+
+                // Prepare next batch
+                def nextBatch: Batch = Batch.getOne(id, 1);
+                if ctx.decode(nextBatch) != 0 {
+                    Console.print("\nerror generating\n");
+                    break;
+                }
+
+                Fs.flush(0);
+                ++i;
             }
+
+            // Print any remaining text up to safeLen that wasn't printed yet
+            if numGenerated > 0 {
+                def finalBuf: array[Char, 4096];
+                def finalLen: Int = detokenize(model.vocab, generatedTokens, numGenerated, finalBuf~ptr, 4096, 0, 0);
+                finalBuf(finalLen) = 0;
+
+                // Determine the final safe length to print/store
+                def finalSafeLen: Int = safeLen;
+                if !hitStopSequence {
+                    // If we didn't hit a stop sequence, include all generated text
+                    finalSafeLen = finalLen;
+                } else if finalSafeLen == 0 && finalLen > 0 {
+                    // If safeLen is 0 but we have text, use the whole thing up to any stop
+                    def tempText: String(finalBuf~ptr);
+                    def stopAt: Int = tempText.find("<|");
+                    if stopAt == -1 stopAt = tempText.find("</s>");
+                    if stopAt == -1 stopAt = tempText.find("\n\n");
+                    if stopAt != -1 finalSafeLen = stopAt else finalSafeLen = finalLen;
+                }
+
+                // Print any remaining text
+                if finalSafeLen > printedLen {
+                    def remaining: array[Char, 4096];
+                    Srl.Memory.copy(remaining~ptr, finalBuf~ptr, finalSafeLen);
+                    remaining(finalSafeLen) = 0;
+                    Console.print("%s", remaining(printedLen)~ptr);
+                }
+
+                // Store clean response in history
+                if finalSafeLen > 0 {
+                    finalBuf(finalSafeLen) = 0;
+                    def cleanResponse: String(finalBuf~ptr);
+                    // Trim trailing whitespace
+                    while cleanResponse.getLength() > 0 {
+                        def lastChar: Char = cleanResponse(cleanResponse.getLength() - 1);
+                        if lastChar == ' ' || lastChar == '\n' || lastChar == '\r' || lastChar == '\t' {
+                            cleanResponse = cleanResponse.slice(0, cleanResponse.getLength() - 1);
+                        } else {
+                            break;
+                        }
+                    }
+
+                    if cleanResponse.getLength() > 0 {
+                        messageContents.add(cleanResponse);
+                        def assistantMsg: ChatMessage;
+                        assistantMsg.role = "assistant";
+                        assistantMsg.content = messageContents(messageContents.getLength() - 1).buf;
+                        messages.add(assistantMsg);
+                    }
+                }
+            }
+
+            Console.print("\n\n");
+            sampler.reset();
         }
+
+        Console.print("\nGoodbye!\n");
+        Sampler.free(sampler);
+        Context.free(ctx);
+        Model.free(model);
     }
 }

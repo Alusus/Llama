@@ -1,0 +1,21 @@
+@merge module Llama {
+    class Memory {
+        @expname[llama_memory_clear]
+        handler this.clear(data: Bool);
+
+        @expname[llama_memory_seq_rm]
+        handler this.seqRemove(seq: SeqId, p0: Pos, p1: Pos): Bool;
+
+        @expname[llama_memory_seq_cp]
+        handler this.seqCopy(src: SeqId, dst: SeqId, p0: Pos, p1: Pos);
+
+        @expname[llama_memory_seq_keep]
+        handler this.seqKeep(seq: SeqId);
+
+        @expname[llama_memory_seq_add]
+        handler this.seqAdd(seq: SeqId, p0: Pos, p1: Pos, delta: Pos);
+
+        @expname[llama_memory_seq_div]
+        handler this.seqDiv(seq: SeqId, p0: Pos, p1: Pos, d: Int);
+    }
+}

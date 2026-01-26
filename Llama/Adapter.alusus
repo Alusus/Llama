@@ -1,0 +1,9 @@
+@merge module Llama {
+    class Adapter {
+        @expname[llama_adapter_lora_init]
+        func loraInit(model: ref[Model], path: CharsPtr): ref[Adapter];
+
+        @expname[llama_adapter_lora_free]
+        func loraFree(ad: ref[Adapter]);
+    }
+}

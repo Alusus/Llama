@@ -1,0 +1,68 @@
+@merge module Llama {
+    class Model {
+        class Params {
+            def devices: ptr;
+            def tensorBuftOverrides: ref[array[TensorBuftOverride]];
+            def nGpuLayers: Int;
+            def splitMode: SplitMode;
+            def mainGpu: Int;
+            def tensorSplit: ref[array[Float]];
+            def progressCallback: ProgressCallback;
+            def progressCallbackUserData: ptr;
+            def kvOverrides: ptr;
+            def vocabOnly: Bool;
+            def useMmap: Bool;
+            def useDirectIo: Bool;
+            def useMlock: Bool;
+            def checkTensors: Bool;
+            def useExtraBufts: Bool;
+            def noHost: Bool;
+            def noAlloc: Bool;
+        }
+
+        @expname[llama_model_default_params]
+        func getDefaultParams(): Params;
+
+        @expname[llama_model_load_from_file]
+        func load(path: CharsPtr, params: Params): ref[Model];
+
+        @expname[llama_model_load_from_splits]
+        func loadSplits(paths: ref[array[CharsPtr]], count: Word, params: Params): ref[Model];
+
+        @expname[llama_model_free]
+        func free(model: ref[Model]);
+
+        @expname[llama_model_save_to_file]
+        handler this.save(path: CharsPtr);
+
+        @expname[llama_model_has_encoder]
+        handler this.hasEncoder: Bool;
+
+        @expname[llama_model_has_dencoder]
+        handler this.hasDencoder: Bool;
+
+        @expname[llama_model_n_ctx_train]
+        handler this.nCtxTrain: Int;
+
+        @expname[llama_model_n_embd]
+        handler this.nEmbd: Int;
+
+        @expname[llama_model_n_layer]
+        handler this.nLayer: Int;
+
+        @expname[llama_model_n_head]
+        handler this.nHead: Int;
+
+        @expname[llama_model_get_vocab]
+        handler this.vocab: ref[Vocab];
+
+        @expname[llama_model_meta_val_str]
+        handler this.metaValStr(key: CharsPtr, buf: CharsPtr, bufSize: ArchWord): Int;
+
+        @expname[llama_model_meta_count]
+        handler this.metaCount: Int;
+
+        @expname[llama_model_meta_key_by_index]
+        handler this.metaKeyByIndex(idx: Int, buf: CharsPtr, bufSize: ArchWord): Int;
+    }
+}

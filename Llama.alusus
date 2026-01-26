@@ -1,45 +1,77 @@
 import "Srl/Memory.alusus";
 import "Srl/Array.alusus";
 import "Srl/String.alusus";
-import "libllama.so";
+import "Apm";
+Apm.importFile("Alusus/Ggml");
 
-module Llama {
-    def CharPtr: alias ptr[Char];
-    def Token: alias Int[32];
-    def Pos: alias Int[32];
-    def SeqId: alias Int[32];
-    def Bool: alias Int;
-    def FType: alias Int;
-    def VocabType: alias Int;
-    def RopeType: alias Int;
-    def TokenType: alias Int;
-    def TokenAttr: alias Int;
-    def SplitMode: alias Int;
-    def RopeScale: alias Int;
-    def PoolingType: alias Int;
-    def AttnType: alias Int;
-    def llama_progress_callback: alias ptr[function (progress: Float, user_data: ptr): Bool];
+CharsPtr(Srl.System.getEnv("GGML_USE_VULKAN")).{
+    if this != 0 and Srl.String.isEqual(this, "1") {
+        Core.importFile("Bin/libllama-vulkan.so");
+    } else {
+        Core.importFile("Bin/libllama-cpu.so");
+    }
+}
 
-    class Model {
+import "Llama/Context";
+import "Llama/Batch";
+import "Llama/Sampler";
+import "Llama/Vocab";
+import "Llama/Model";
+import "Llama/Adapter";
+import "Llama/Memory";
+
+@merge module Llama {
+    // Basic Types
+
+    def Token: alias Int;
+    def Pos: alias Int;
+    def SeqId: alias Int;
+    def ProgressCallback: alias ptr[function (progress: Float, userData: ptr): Bool];
+
+    // Enums
+
+    class SplitMode {
+        Srl.setupIntEnum[];
+        Srl.enumIntValue[NONE,  0]; // single GPU
+        Srl.enumIntValue[LAYER, 1]; // split layers and KV across GPUs
+        Srl.enumIntValue[ROW,   2]; // split layers and KV across GPUs, use tensor parallelism if supported
     }
 
-    class Vocab {
+    class RopeScalingType {
+        Srl.setupIntEnum[];
+        Srl.enumIntValue[UNSPECIFIED, -1];
+        Srl.enumIntValue[NONE, 0];
+        Srl.enumIntValue[LINEAR, 1];
+        Srl.enumIntValue[YARN, 2];
+        Srl.enumIntValue[LONGROPE, 3];
+        Srl.enumIntValue[MAX_VALUE, 3];
     }
 
-    class Context {
+    class PoolingType {
+        Srl.setupIntEnum[];
+        Srl.enumIntValue[UNSPECIFIED, -1];
+        Srl.enumIntValue[NONE, 0];
+        Srl.enumIntValue[MEAN, 1];
+        Srl.enumIntValue[CLS, 2];
+        Srl.enumIntValue[LAST, 3];
+        Srl.enumIntValue[RANK, 4];
     }
 
-    class Sampler {
+    class AttentionType {
+        Srl.setupIntEnum[];
+        Srl.enumIntValue[UNSPECIFIED, -1];
+        Srl.enumIntValue[CAUSAL, 0];
+        Srl.enumIntValue[NON_CAUSAL, 1];
     }
 
-    class KVCache {
-    }
+    class FlashAttnType {
+        Srl.setupIntEnum[];
+        Srl.enumIntValue[AUTO, -1];
+        Srl.enumIntValue[DISABLED, 0];
+        Srl.enumIntValue[ENABLED, 1];
+    };
 
-    class Memory {
-    }
-
-    class Adapter {
-    }
+    // Structures
 
     class TokenData {
         def id: Token;
@@ -49,188 +81,68 @@ module Llama {
 
     class TokenDataArray {
         def data: ptr[TokenData];
-        def size: Int[64];
-        def selected: Int;
+        def size: ArchWord;
+        def selected: Int[64];
         def sorted: Bool;
     }
 
-    class Batch {
-        def n_tokens: Int[32];
-        def token: ptr[Token];
-        def embd: ptr[Float];
-        def pos: ptr[Pos];
-        def n_seq_id: ptr[Int[32]];
-        def seq_id: ptr[ptr[SeqId]];
-        def logits: ptr[Int[8]];
-    }
-
-    class ModelParams {
-        def devices: ptr;
-        def tensor_buft_overrides: ptr;
-        def n_gpu_layers: Int[32];
-        def split_mode: SplitMode;
-        def main_gpu: Int[32];
-        def tensor_split: ptr[Float];
-        def progress_callback: llama_progress_callback;
-        def progress_callback_user_data: ptr;
-        def kv_overrides: ptr;
-        def vocab_only: Bool;
-        def use_mmap: Bool;
-        def use_mlock: Bool;
-        def check_tensors: Bool;
-    }
-
-    class ContextParams {
-        def n_ctx: Int[32];
-        def n_batch: Int[32];
-        def n_ubatch: Int[32];
-        def n_seq_max: Int[32];
-        def n_threads: Int[32];
-        def n_threads_batch: Int[32];
-        def rope_scaling_type: RopeScale;
-        def pooling_type: PoolingType;
-        def attention_type: AttnType;
-        def rope_freq_base: Float;
-        def rope_freq_scale: Float;
-        def yarn_ext_factor: Float;
-        def yarn_attn_factor: Float;
-        def yarn_beta_fast: Float;
-        def yarn_beta_slow: Float;
-        def yarn_orig_ctx: Int[32];
-        def defrag_thold: Float;
-        def cb_eval: ptr[function (var1: ptr, var2: ptr)];
-        def cb_eval_data: ptr;
-        def type_k: Int;
-        def type_v: Int;
-        def abort_cb: ptr[function (var1: ptr): Bool];
-        def abort_cb_data: ptr;
-        def embeddings: Bool;
-        def offload_kqv: Bool;
-        def flash_attn: Bool;
-        def no_perf: Bool;
-        def op_offload: Bool;
-        def swa_full: Bool;
-    }
-    class Vocab{}
-
-    class QuantizeParams {
-        def nthread: Int[32];
-        def ftype: FType;
-        def output_tensor_type: Int;
-        def token_embedding_type: Int;
-        def allow_requantize: Bool;
-        def quantize_output_tensor: Bool;
-        def only_copy: Bool;
-        def pure: Bool;
-        def keep_split: Bool;
-        def imatrix: ptr;
-        def kv_overrides: ptr;
-        def tensor_types: ptr;
-        def prune_layers: ptr;
-    }
-
-    class LogitBias {
-        def token: Token;
-        def bias: Float;
-    }
-
-    class ChainParams {
-        def no_perf: Bool;
+    class SamplerSeqConfig {
+        def seqId: SeqId;
+        def sampler: ref[Sampler];
     }
 
     class ChatMessage {
-        def role: CharPtr;
-        def content: CharPtr;
+        def role: CharsPtr;
+        def content: CharsPtr;
     }
 
-    class PerfContext {
-        def t_start_ms: Float;
-        def t_load_ms: Float;
-        def t_p_eval_ms: Float;
-        def t_eval_ms: Float;
-        def n_p_eval: Int[32];
-        def n_eval: Int[32];
+    class PerfContextData {
+        def tStartMs: Float[64];
+        def tLoadMs: Float[64];
+        def tPEvalMs: Float[64];
+        def tEvalMs: Float[64];
+        def nPEval: Int;
+        def nEval: Int;
+        def nReused: Int;
     }
 
-    class PerfSampler {
-        def t_sample_ms: Float;
-        def n_sample: Int[32];
+    class PerfSamplerData {
+        def tSampleMs: Float[64];
+        def nSample: Int;
     }
 
-    def DEFAULT_SEED: alias Int[32] = 0xFFFFFFFF;
-    def TOKEN_NULL: alias Int[32] =  - 1;
+    class TensorBuftOverride {
+        def pattern: CharsPtr;
+        def buft: ref[Ggml.BackendBufferType];
+    }
+
+    // Constants
+
+    def DEFAULT_SEED: Int(0xFFFFFFFF);
+    def TOKEN_NULL: Int(-1);
+
+    // Global Functions
 
     @expname[llama_backend_init]
-    func backendInit(useF16: Bool);
+    func backendInit();
 
     @expname[llama_backend_free]
     func backendFree();
 
     @expname[llama_numa_init]
-    func numaInit(strategy: Int);
-
-    @expname[llama_attach_threadpool]
-    func attachThreadpool(ctx: ptr[Context], tp: ptr, tpBatch: ptr);
-
-    @expname[llama_batch_get_one]
-    func batchGetOne(tokens: ptr[Token], n_tokens: int) : Batch;
-
-    @expname[llama_sampler_sample]
-    func samplerSample(smpl: ptr[Sampler], ctx: ptr[Context], idx : int) : Token;
-
-    @expname[llama_detach_threadpool]
-    func detachThreadpool(ctx: ptr[Context]);
-
-@expname[llama_token_to_piece]
-    func tokenToPiece(vocab: ptr[Vocab],token : Token , buf : CharsPtr , length : int , lstrip : int , special : bool) : int;
-
-    @expname[llama_vocab_eos]
-    func vocabEos(vocab: ptr[Vocab]) : Token;
-
-    @expname[llama_model_default_params]
-    func modelDefaultParams(): ModelParams;
-
-    @expname[llama_model_load_from_file]
-    func loadModel(path: CharPtr, params: ModelParams): ptr[Model];
-
-    @expname[llama_model_load_from_splits]
-    func loadModelSplits(paths: ptr[CharPtr], count: Word, params: ptr[ModelParams]): ptr[Model];
-
-    @expname[llama_model_save_to_file]
-    func saveModel(model: ptr[Model], path: CharPtr);
-
-    @expname[llama_model_free]
-    func freeModel(model: ptr[Model]);
-
-
-    @expname[llama_context_default_params]
-    func contextDefaultParams(): ContextParams;
-
-    @expname[llama_init_from_model]
-    func initContext(model: ptr[Model], params: ptr[ContextParams]): ptr[Context];
-
-    @expname[llama_free]
-    func freeContext(ctx: ptr[Context]);
-
+    func _numaInit(numaStrategy: Int);
+    func numaInit(numaStrategy: Ggml.NumaStrategy) {
+        _numaInit(numaStrategy.val);
+    }
 
     @expname[llama_time_us]
     func timeUs(): Int[64];
 
     @expname[llama_max_devices]
-    func maxDevices(): Word;
+    func maxDevices(): ArchWord;
 
     @expname[llama_max_parallel_sequences]
-    func maxParallelSeq(): Word;
-
-    @expname[llama_get_embeddings_seq]
-    func getEmbeddingsSeq(ctx : Context, seqId : SeqId): ptr[float];
-
-    @expname[llama_model_has_encoder]
-    func modelHasEncoder(model : ptr[Model]): Bool;
-
-    @expname[llama_model_has_dencoder]
-    func modelHasDencoder(model : ptr[Model]): Bool;
-
+    func maxParallelSequences(): ArchWord;
 
     @expname[llama_supports_mmap]
     func supportsMmap(): Bool;
@@ -244,222 +156,32 @@ module Llama {
     @expname[llama_supports_rpc]
     func supportsRpc(): Bool;
 
-
-    @expname[llama_n_ctx]
-    func nCtx(ctx: ptr[Context]): Word;
-
-    @expname[llama_n_batch]
-    func nBatch(ctx: ptr[Context]): Word;
-
-    @expname[llama_n_ubatch]
-    func nUbatch(ctx: ptr[Context]): Word;
-
-    @expname[llama_n_seq_max]
-    func nSeqMax(ctx: ptr[Context]): Word;
-
-
-    @expname[llama_model_n_ctx_train]
-    func modelNCtxTrain(model: ptr[Model]): Int[32];
-
-    @expname[llama_model_n_embd]
-    func modelNEmbeddings(model: ptr[Model]): Int[32];
-
-    @expname[llama_model_n_layer]
-    func modelNLayers(model: ptr[Model]): Int[32];
-
-    @expname[llama_model_n_head]
-    func modelNHeads(model: ptr[Model]): Int[32];
-
-    @expname[llama_batch_init]
-    func batchInit(n_tokens: int , embd : int , n_seq_max : int): Batch;
-
-    @expname[llama_model_n_vocab]
-    func modelNVocab(model: ptr[Vocab]): Int[32];
-
-    @expname[llama_get_model]
-    func getModel(ctx: ptr[Context]): ptr[Model];
-
-    @expname[llama_get_memory]
-    func getMemory(ctx: ptr[Context]): ptr[Memory];
-
-    @expname[llama_pooling_type]
-    func poolingType(ctx: ptr[Context]): PoolingType;
-
-
     @expname[llama_tokenize]
-    func tokenize(model: ptr[Vocab], text: CharPtr, textLen: Int[32],
-        tokens: ptr[Token], maxTokens: Int[32],
-        addSpecial: Bool, parseSpecial: Bool): Int[32];
+    func tokenize(
+        vocab: ref[Vocab], text: CharsPtr, textLen: Int,
+        tokens: ref[array[Token]], nTokensMax: Int,
+        addSpecial: Bool, parseSpecial: Bool
+    ): Int;
 
     @expname[llama_detokenize]
-    func detokenize(model: ptr[Vocab], tokens: ptr[Token], nTokens: Int[32],
-        outText: CharPtr, textLenMax: Int[32],
-        removeSpecial: Bool, unparseSpecial: Bool): Int[32];
+    func detokenize(
+        vocab: ref[Vocab], tokens: ref[array[Token]], nTokens: Int,
+        text: CharsPtr, textLenMax: Int,
+        removeSpecial: Bool, unparseSpecial: Bool
+    ): Int;
 
     @expname[llama_chat_apply_template]
-    func chatApplyTemplate(tmpl: CharPtr, chat: ptr[ChatMessage], nMsg: Word,
-        addAssistant: Bool, outBuf: CharPtr, bufLen: Int[32]): Int[32];
+    func chatApplyTemplate(
+        tmpl: CharsPtr, chat: ref[array[ChatMessage]], nMsg: ArchWord,
+        addAssistant: Bool, buf: CharsPtr, bufLen: Int
+    ): Int;
 
     @expname[llama_chat_builtin_templates]
-    func chatBuiltinTemplates(out: ptr[CharPtr], len: Word): Int[32];
-
-
-    @expname[llama_eval]
-    func eval(ctx: ptr[Context], tokens: ptr[Token], nTokens: Int[32],
-        nPast: Int[32], nThreads: Int[32]): Int[32];
-
-    @expname[llama_encode]
-    func encode(ctx: ptr[Context], batch: Batch): Int[32];
-
-    @expname[llama_decode]
-    func decode(ctx: ptr[Context], batch: Batch): Int[32];
-
-    @expname[llama_get_logits]
-    func getLogits(ctx: ptr[Context], out: ptr[ptr[Float]]);
-
-    @expname[llama_get_embeddings]
-    func getEmbeddings(ctx: ptr[Context], out: ptr[ptr[Float]]);
-
-    @expname[llama_sampler_init]
-    func samplerInit(iface: ptr, ctx: ptr): ptr[Sampler];
-
-    @expname[llama_sampler_name]
-    func samplerName(s: ptr[Sampler]): CharPtr;
-
-    @expname[llama_sampler_accept]
-    func samplerAccept(s: ptr[Sampler], token: Token);
-
-    @expname[llama_sampler_apply]
-    func samplerApply(s: ptr[Sampler], cand: ptr[TokenDataArray]);
-
-    @expname[llama_sampler_reset]
-    func samplerReset(s: ptr[Sampler]);
-
-    @expname[llama_sampler_clone]
-    func samplerClone(s: ptr[Sampler]): ptr[Sampler];
-
-    @expname[llama_sampler_free]
-    func samplerFree(s: ptr[Sampler]);
-
-    @expname[llama_sampler_chain_init]
-    func chainInit(params: ChainParams): ptr[Sampler];
-
-    @expname[llama_sampler_chain_add]
-    func chainAdd(chain: ptr[Sampler], s: ptr[Sampler]);
-
-    @expname[llama_sampler_chain_get]
-    func chainGet(chain: ptr[Sampler], idx: Int[32]): ptr[Sampler];
-
-    @expname[llama_sampler_chain_n]
-    func chainCount(chain: ptr[Sampler]): Int[32];
-
-    @expname[llama_sampler_chain_remove]
-    func chainRemove(chain: ptr[Sampler], idx: Int[32]): ptr[Sampler];
-
-    @expname[llama_sampler_init_greedy]
-    func samplerGreedy(): ptr[Sampler];
-
-    @expname[llama_sampler_init_dist]
-    func samplerDist(seed: Word): ptr[Sampler];
-
-    @expname[llama_sampler_init_top_k]
-    func sampleTopK(k: Int[32]): ptr[Sampler];
-
-    @expname[llama_sampler_init_top_p]
-    func sampleTopP(p: Float, minKeep: Word): ptr[Sampler];
-
-    @expname[llama_state_get_size]
-    func stateGetSize(ctx: ptr[Context]): Word;
-
-    @expname[llama_state_get_data]
-    func stateGetData(ctx: ptr[Context], dst: ptr[UInt[8]], size: Word): Word;
-
-    @expname[llama_state_set_data]
-    func stateSetData(ctx: ptr[Context], src: ptr[UInt[8]], size: Word): Word;
-
-    @expname[llama_state_load_file]
-    func stateLoadFile(ctx: ptr[Context], path: CharPtr,
-        tokensOut: ptr[Token], cap: Word,
-        outCount: ptr[Word]): Bool;
-
-      @expname[llama_model_get_vocab]
-    func modelGetVocab(model: ptr[Model]): ptr[Vocab];
-
-    @expname[llama_state_save_file]
-    func stateSaveFile(ctx: ptr[Context], path: CharPtr,
-        tokens: ptr[Token], count: Word): Bool;
-
-    @expname[llama_adapter_lora_init]
-    func adapterLoraInit(model: ptr[Model], path: CharPtr): ptr[Adapter];
-
-    @expname[llama_adapter_lora_free]
-    func adapterLoraFree(ad: ptr[Adapter]);
-
-    @expname[llama_set_adapter_lora]
-    func setAdapterLora(ctx: ptr[Context], ad: ptr[Adapter], scale: Float): Int[32];
-
-    @expname[llama_rm_adapter_lora]
-    func removeAdapterLora(ctx: ptr[Context], ad: ptr[Adapter]): Int[32];
-
-    @expname[llama_kv_cache_clear]
-    func kvCacheClear(context: ptr[Context]);
-
-    @expname[llama_clear_adapter_lora]
-    func clearAdapterLora(ctx: ptr[Context]);
-
-    @expname[llama_memory_clear]
-    func memoryClear(mem: ptr[Memory], data: Bool);
-
-    @expname[llama_memory_seq_rm]
-    func memorySeqRemove(mem: ptr[Memory], seq: SeqId,
-        p0: Pos, p1: Pos): Bool;
-
-    @expname[llama_memory_seq_cp]
-    func memorySeqCopy(mem: ptr[Memory], src: SeqId, dst: SeqId, p0: Pos, p1: Pos);
-
-    @expname[llama_memory_seq_keep]
-    func memorySeqKeep(mem: ptr[Memory], seq: SeqId);
-
-    @expname[llama_memory_seq_add]
-    func memorySeqAdd(mem: ptr[Memory], seq: SeqId, p0: Pos, p1: Pos, delta: Pos);
-
-    @expname[llama_memory_seq_div]
-    func memorySeqDiv(mem: ptr[Memory], seq: SeqId, p0: Pos, p1: Pos, d: Int);
-
-    @expname[llama_model_meta_val_str]
-    func modelMetaValStr(model: ptr[Model], key: CharPtr,
-        buf: CharPtr, bufSize: Word): Int[32];
-
-    @expname[llama_model_meta_count]
-    func modelMetaCount(model: ptr[Model]): Int[32];
-
-    @expname[llama_model_meta_key_by_index]
-    func modelMetaKeyByIndex(model: ptr[Model], idx: Int[32],
-        buf: CharPtr, bufLen: Word): Int[32];
+    func chatBuiltinTemplates(out: ref[CharsPtr], len: ArchWord): Int;
 
     @expname[llama_log_set]
-    func setLogCallback(cb: ptr[function (messageType: Int, text: CharPtr, userData: ptr)],
-        userData: ptr);
+    func logSet(cb: ptr[function (level: Int, text: CharsPtr, userData: ptr)], userData: ptr);
 
     @expname[llama_print_system_info]
-    func printSystemInfo(): CharPtr;
-
-    @expname[llama_perf_context]
-    func perfContext(ctx: ptr[Context]): PerfContext;
-
-    @expname[llama_perf_context_print]
-    func perfContextPrint(ctx: ptr[Context]);
-
-    @expname[llama_perf_context_reset]
-    func perfContextReset(ctx: ptr[Context]);
-
-    @expname[llama_perf_sampler]
-    func perfSampler(chain: ptr[Sampler]): PerfSampler;
-
-    @expname[llama_perf_sampler_print]
-    func perfSamplerPrint(chain: ptr[Sampler]);
-
-    @expname[llama_perf_sampler_reset]
-    func perfSamplerReset(chain: ptr[Sampler]);
+    func printSystemInfo(): CharsPtr;
 }
-

@@ -1,0 +1,12 @@
+@merge module Llama {
+    class Vocab {
+        @expname[llama_token_to_piece]
+        handler this.tokenToPiece(token: Token, buf: CharsPtr, length: Int, lstrip: Int, special: bool): Int;
+
+        @expname[llama_vocab_eos]
+        handler this.eos: Token;
+
+        @expname[llama_vocab_is_eog]
+        handler this.isEog(token: Token): Bool;
+    }
+}
