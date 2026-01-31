@@ -1,5 +1,5 @@
 # Llama - Alusus Bindings for llama.cpp
-[[العربية]](readme.ar.md)
+[[العربية]](README.ar.md)
 
 Alusus language bindings for [llama.cpp](https://github.com/ggerganov/llama.cpp), providing a complete interface for running LLM inference locally. This library supports both CPU and Vulkan GPU backends.
 
@@ -712,5 +712,8 @@ Model.free(model);
 ---
 
 ## License
+
+Copyright (c) 2023-2024 The ggml authors
+Copyright (c) 2026 Alusus Software Ltd. for the Alusus language bindings.
 
 This library follows the same license as llama.cpp (MIT License).

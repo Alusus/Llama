@@ -1,7 +1,7 @@
 <div dir=rtl>
 
 # لـاما - روابط الأسس لمكتبة llama.cpp
-[[English]](readme.md)
+[[English]](README.md)
 
 روابط لغة الأسس لمكتبة [llama.cpp](https://github.com/ggerganov/llama.cpp)، توفر واجهة كاملة لتشغيل استدلال نماذج اللغة الكبيرة محلياً. تدعم هذه المكتبة المعالج المركزي ومعالج الرسوميات عبر Vulkan.
 
