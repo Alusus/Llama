@@ -253,8 +253,8 @@ Model loading parameters. Maps to `llama_model_params`.
 - `model.hasEncoder: Bool`
   Check if model has encoder. Maps to `llama_model_has_encoder`.
 
-- `model.hasDencoder: Bool`
-  Check if model has decoder. Maps to `llama_model_has_dencoder`.
+- `model.hasDecoder: Bool`
+  Check if model has decoder. Maps to `llama_model_has_decoder`.
 
 - `model.nCtxTrain: Int`
   Training context size. Maps to `llama_model_n_ctx_train`.

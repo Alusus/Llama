@@ -338,8 +338,8 @@ GGML_USE_VULKAN=1 alusus your_script.alusus
 - `نموذج.لديه_مرمز: ثـنائي` / `model.hasEncoder: Bool`
   التحقق من وجود مرمز. يقابل `llama_model_has_encoder`.
 
-- `نموذج.لديه_فاك_ترميز: ثـنائي` / `model.hasDencoder: Bool`
-  التحقق من وجود فاك ترميز. يقابل `llama_model_has_dencoder`.
+- `نموذج.لديه_فاك_ترميز: ثـنائي` / `model.hasDecoder: Bool`
+  التحقق من وجود فاك ترميز. يقابل `llama_model_has_decoder`.
 
 - `نموذج.عدد_سياقات_التدريب: صـحيح` / `model.nCtxTrain: Int`
   حجم سياق التدريب. يقابل `llama_model_n_ctx_train`.
