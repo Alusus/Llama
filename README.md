@@ -424,10 +424,10 @@ Token batch for processing. Maps to `llama_batch`.
 - `nTokens` (`Int`) - Number of tokens. Maps to `n_tokens`.
 - `token` (`ref[array[Token]]`) - Token IDs. Maps to `token`.
 - `embd` (`ref[array[Float]]`) - Embeddings (alternative to tokens). Maps to `embd`.
-- `pos` (`ref[Pos]`) - Token positions. Maps to `pos`.
-- `nSeqId` (`ref[Int]`) - Number of sequence IDs per token. Maps to `n_seq_id`.
-- `seqId` (`ref[ref[SeqId]]`) - Sequence IDs. Maps to `seq_id`.
-- `output` (`ref[Int[8]]`) - Output flags. Maps to `logits`.
+- `pos` (`ref[array[Pos]]`) - Token positions. Maps to `pos`.
+- `nSeqId` (`ref[array[Int]]`) - Number of sequence IDs per token. Maps to `n_seq_id`.
+- `seqId` (`ref[array[ref[array[SeqId]]]]`) - Sequence IDs. Maps to `seq_id`.
+- `output` (`ref[array[Int[8]]]`) - Output flags. Maps to `logits`.
 
 #### Batch Functions
 
