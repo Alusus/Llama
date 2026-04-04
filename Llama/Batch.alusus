@@ -3,10 +3,10 @@
         def nTokens: Int;
         def token: ref[array[Token]];
         def embd: ref[array[Float]];
-        def pos: ref[Pos];
-        def nSeqId: ref[Int];
-        def seqId: ref[ref[SeqId]];
-        def output: ref[Int[8]];
+        def pos: ref[array[Pos]];
+        def nSeqId: ref[array[Int]];
+        def seqId: ref[array[ref[array[SeqId]]]];
+        def output: ref[array[Int[8]]];
 
         @expname[llama_batch_get_one]
         func getOne(tokens: ref[array[Token]], nTokens: Int): Batch;

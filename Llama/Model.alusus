@@ -38,8 +38,8 @@
         @expname[llama_model_has_encoder]
         handler this.hasEncoder: Bool;
 
-        @expname[llama_model_has_dencoder]
-        handler this.hasDencoder: Bool;
+        @expname[llama_model_has_decoder]
+        handler this.hasDecoder: Bool;
 
         @expname[llama_model_n_ctx_train]
         handler this.nCtxTrain: Int;
