@@ -2,7 +2,7 @@ import "Srl/Memory.alusus";
 import "Srl/Array.alusus";
 import "Srl/String.alusus";
 import "Apm";
-Apm.importFile("Alusus/Ggml");
+Apm.importPackage("Alusus/Ggml@0.2");
 
 CharsPtr(Srl.System.getEnv("GGML_USE_VULKAN")).{
     if this != 0 and Srl.String.isEqual(this, "1") {

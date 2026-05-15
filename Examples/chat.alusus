@@ -4,7 +4,7 @@ import "Srl/String";
 import "Srl/Array";
 import "Srl/Memory";
 import "Apm";
-Apm.importFile("Alusus/Llama");
+Apm.importPackage("Alusus/Llama@0.2");
 use Srl;
 use Llama;
 

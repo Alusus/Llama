@@ -7,7 +7,7 @@ Alusus language bindings for [llama.cpp](https://github.com/ggerganov/llama.cpp)
 
 ```
 import "Apm";
-Apm.importFile("Alusus/Llama");
+Apm.importPackage("Alusus/Llama@0.2");
 ```
 
 ## Quick Start
@@ -15,7 +15,7 @@ Apm.importFile("Alusus/Llama");
 ```alusus
 import "Srl/Console";
 import "Apm";
-Apm.importFile("Alusus/Llama");
+Apm.importPackage("Alusus/Llama@0.2");
 use Srl;
 use Llama;
 
@@ -657,7 +657,7 @@ See `Examples/chat.alusus` for a multi-turn chat example with chat templates.
 
 ```alusus
 import "Apm";
-Apm.importFile("Alusus/Llama");
+Apm.importPackage("Alusus/Llama@0.2");
 use Llama;
 
 // 1. Initialize backend

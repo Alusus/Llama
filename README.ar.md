@@ -9,14 +9,14 @@
 
 ```
 اشمل "مـحا"؛
-مـحا.اشمل_ملف("Alusus/Llama"، "لـاما.أسس")؛
+مـحا.اشمل_حزمة("Alusus/Llama@0.2"، "لـاما.أسس")؛
 ```
 
 <div dir=ltr>
 
 ```
 import "Apm";
-Apm.importFile("Alusus/Llama");
+Apm.importPackage("Alusus/Llama@0.2");
 ```
 
 </div>
@@ -26,7 +26,7 @@ Apm.importFile("Alusus/Llama");
 ```
 اشمل "مـتم/طـرفية"؛
 اشمل "مـحا"؛
-مـحا.اشمل_ملف("Alusus/Llama"، "لـاما.أسس")؛
+مـحا.اشمل_حزمة("Alusus/Llama@0.2"، "لـاما.أسس")؛
 
 // تحميل المشغلات
 جـجمل.مـشغل.حمل_للمعالج()؛
@@ -59,7 +59,7 @@ Apm.importFile("Alusus/Llama");
 ```
 import "Srl/Console";
 import "Apm";
-Apm.importFile("Alusus/Llama");
+Apm.importPackage("Alusus/Llama@0.2");
 use Srl;
 use Llama;
 
