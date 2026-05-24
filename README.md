@@ -708,12 +708,3 @@ Sampler.free(sampler);
 Context.free(ctx);
 Model.free(model);
 ```
-
----
-
-## License
-
-Copyright (c) 2023-2024 The ggml authors
-Copyright (c) 2026 Alusus Software Ltd. for the Alusus language bindings.
-
-This library follows the same license as llama.cpp (MIT License).
