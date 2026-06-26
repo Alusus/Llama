@@ -1,4 +1,5 @@
-# لـاما - روابط الأسس لمكتبة llama.cpp
+# لـاما (Llama)
+
 [[English]](README.md)
 
 <div dir=rtl>

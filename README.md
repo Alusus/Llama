@@ -1,4 +1,4 @@
-# Llama - Alusus Bindings for llama.cpp
+# Llama
 
 [[العربية]](README.ar.md)
 
