@@ -2,21 +2,16 @@
 
 [[العربية]](README.ar.md)
 
-
 Alusus language bindings for [llama.cpp](https://github.com/ggerganov/llama.cpp), providing a complete interface for running LLM inference locally. This library supports both CPU and Vulkan GPU backends.
 
 ## Installation
-
----
 
 ```
 import "Apm";
 Apm.importPackage("Alusus/Llama@0.2");
 ```
 
-## Quick Start
-
----
+## Example
 
 ```
 import "Srl/Console";
@@ -53,8 +48,6 @@ Model.free(model);
 
 ## GPU Support
 
----
-
 Set the `GGML_USE_VULKAN` environment variable to `1` before running to enable Vulkan GPU acceleration:
 
 ```
@@ -63,60 +56,57 @@ GGML_USE_VULKAN=1 alusus your_script.alusus
 
 ## API Reference
 
----
-
 ### Basic Types
 
-* `Token` (`llama_token`): Token ID (alias for `Int`)
-* `Pos` (`llama_pos`): Token position (alias for `Int`)
-* `SeqId` (`llama_seq_id`): Sequence ID (alias for `Int`)
-* `ProgressCallback` (`llama_progress_callback`): Progress callback function pointer
+* `Token`: `Int` - Token ID (alias for `llama_token` in llama.cpp)
+* `Pos`: `Int` - Token position (alias for `llama_pos` in llama.cpp)
+* `SeqId`: `Int` - Sequence ID (alias for `llama_seq_id` in llama.cpp)
+* `ProgressCallback`: `ptr[function (progress: Float, userData: ptr): Bool]` - Progress callback function
+  pointer (alias for `llama_progress_callback` in llama.cpp)
 
 ### Constants
 
-* `DEFAULT_SEED` (`LLAMA_DEFAULT_SEED`, `0xFFFFFFFF`): Default random seed
-* `TOKEN_NULL` (`LLAMA_TOKEN_NULL`, `-1`): Null token value
+* `DEFAULT_SEED` (`0xFFFFFFFF`): Default random seed (equivalent to `LLAMA_DEFAULT_SEED` in llama.cpp)
+* `TOKEN_NULL` (`-1`): Null token value (equivalent to `LLAMA_TOKEN_NULL` in llama.cpp)
 
 ## Enums
-
----
 
 ### SplitMode
 
 Controls how model layers are distributed across GPUs.
 
-* `NONE` (`LLAMA_SPLIT_MODE_NONE`): Single GPU only
-* `LAYER` (`LLAMA_SPLIT_MODE_LAYER`): Split layers and KV cache across GPUs
-* `ROW` (`LLAMA_SPLIT_MODE_ROW`): Split with tensor parallelism if supported
+* `NONE`: Single GPU only (equivalent to `LLAMA_SPLIT_MODE_NONE` in llama.cpp)
+* `LAYER`: Split layers and KV cache across GPUs (equivalent to `LLAMA_SPLIT_MODE_LAYER` in llama.cpp)
+* `ROW`: Split with tensor parallelism if supported (equivalent to `LLAMA_SPLIT_MODE_ROW` in llama.cpp)
 
 ### RopeScalingType
 
 RoPE (Rotary Position Embedding) scaling type.
 
-* `UNSPECIFIED` (`LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED`): Not specified
-* `NONE` (`LLAMA_ROPE_SCALING_TYPE_NONE`): No scaling
-* `LINEAR` (`LLAMA_ROPE_SCALING_TYPE_LINEAR`): Linear scaling
-* `YARN` (`LLAMA_ROPE_SCALING_TYPE_YARN`): YaRN scaling
-* `LONGROPE` (`LLAMA_ROPE_SCALING_TYPE_LONGROPE`): LongRoPE scaling
+* `UNSPECIFIED`: Not specified (equivalent to `LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED` in llama.cpp)
+* `NONE`: No scaling (equivalent to `LLAMA_ROPE_SCALING_TYPE_NONE` in llama.cpp)
+* `LINEAR`: Linear scaling (equivalent to `LLAMA_ROPE_SCALING_TYPE_LINEAR` in llama.cpp)
+* `YARN`: YaRN scaling (equivalent to `LLAMA_ROPE_SCALING_TYPE_YARN` in llama.cpp)
+* `LONGROPE`: LongRoPE scaling (equivalent to `LLAMA_ROPE_SCALING_TYPE_LONGROPE` in llama.cpp)
 
 ### PoolingType
 
 Pooling type for embeddings.
 
-* `UNSPECIFIED` (`LLAMA_POOLING_TYPE_UNSPECIFIED`): Not specified
-* `NONE` (`LLAMA_POOLING_TYPE_NONE`): No pooling
-* `MEAN` (`LLAMA_POOLING_TYPE_MEAN`): Mean pooling
-* `CLS` (`LLAMA_POOLING_TYPE_CLS`): CLS token pooling
-* `LAST` (`LLAMA_POOLING_TYPE_LAST`): Last token pooling
-* `RANK` (`LLAMA_POOLING_TYPE_RANK`): Rank pooling
+* `UNSPECIFIED`: Not specified (`LLAMA_POOLING_TYPE_UNSPECIFIED` in llama.cpp)
+* `NONE`: No pooling (`LLAMA_POOLING_TYPE_NONE` in llama.cpp)
+* `MEAN`: Mean pooling (`LLAMA_POOLING_TYPE_MEAN` in llama.cpp)
+* `CLS`: CLS token pooling (`LLAMA_POOLING_TYPE_CLS` in llama.cpp)
+* `LAST`: Last token pooling (`LLAMA_POOLING_TYPE_LAST` in llama.cpp)
+* `RANK`: Rank pooling (`LLAMA_POOLING_TYPE_RANK` in llama.cpp)
 
 ### AttentionType
 
 Attention mechanism type.
 
-* `UNSPECIFIED` (`LLAMA_ATTENTION_TYPE_UNSPECIFIED`): Not specified
-* `CAUSAL` (`LLAMA_ATTENTION_TYPE_CAUSAL`): Causal attention (autoregressive)
-* `NON_CAUSAL` (`LLAMA_ATTENTION_TYPE_NON_CAUSAL`): Non-causal attention
+* `UNSPECIFIED`: Not specified (`LLAMA_ATTENTION_TYPE_UNSPECIFIED` in llama.cpp)
+* `CAUSAL`: Causal attention - autoregressive (`LLAMA_ATTENTION_TYPE_CAUSAL` in llama.cpp)
+* `NON_CAUSAL`: Non-causal attention (`LLAMA_ATTENTION_TYPE_NON_CAUSAL` in llama.cpp)
 
 ### FlashAttnType
 
@@ -127,8 +117,6 @@ Flash attention configuration.
 * `ENABLED` (1): Flash attention enabled
 
 ## Data Structures
-
----
 
 ### TokenData
 
@@ -175,8 +163,6 @@ Performance data for sampler operations. Maps to `llama_perf_sampler_data`.
 
 ## Classes
 
----
-
 ### Model
 
 Represents a loaded LLM model. Maps to `llama_model`.
@@ -208,6 +194,7 @@ Model loading parameters. Maps to `llama_model_params`.
 ```
 func Model.getDefaultParams(): Params
 ```
+
 Get default model parameters. Maps to `llama_model_default_params`.
 
 #### load
@@ -215,6 +202,7 @@ Get default model parameters. Maps to `llama_model_default_params`.
 ```
 func Model.load(path: CharsPtr, params: Params): ref[Model]
 ```
+
 Load model from file. Maps to `llama_model_load_from_file`.
 
 #### loadSplits
@@ -222,6 +210,7 @@ Load model from file. Maps to `llama_model_load_from_file`.
 ```
 func Model.loadSplits(paths: ref[array[CharsPtr]], count: Word, params: Params): ref[Model]
 ```
+
 Load model from split files. Maps to `llama_model_load_from_splits`.
 
 #### free
@@ -229,6 +218,7 @@ Load model from split files. Maps to `llama_model_load_from_splits`.
 ```
 func Model.free(model: ref[Model])
 ```
+
 Free model resources. Maps to `llama_model_free`.
 
 #### save
@@ -236,6 +226,7 @@ Free model resources. Maps to `llama_model_free`.
 ```
 func model.save(path: CharsPtr)
 ```
+
 Save model to file. Maps to `llama_model_save_to_file`.
 
 #### hasEncoder
@@ -243,6 +234,7 @@ Save model to file. Maps to `llama_model_save_to_file`.
 ```
 model.hasEncoder: Bool
 ```
+
 Check if model has encoder. Maps to `llama_model_has_encoder`.
 
 #### hasDecoder
@@ -250,6 +242,7 @@ Check if model has encoder. Maps to `llama_model_has_encoder`.
 ```
 model.hasDecoder: Bool
 ```
+
 Check if model has decoder. Maps to `llama_model_has_decoder`.
 
 #### nCtxTrain
@@ -257,6 +250,7 @@ Check if model has decoder. Maps to `llama_model_has_decoder`.
 ```
 model.nCtxTrain: Int
 ```
+
 Training context size. Maps to `llama_model_n_ctx_train`.
 
 #### nEmbd
@@ -264,6 +258,7 @@ Training context size. Maps to `llama_model_n_ctx_train`.
 ```
 model.nEmbd: Int
 ```
+
 Embedding dimension. Maps to `llama_model_n_embd`.
 
 #### nLayer
@@ -271,6 +266,7 @@ Embedding dimension. Maps to `llama_model_n_embd`.
 ```
 model.nLayer: Int
 ```
+
 Number of layers. Maps to `llama_model_n_layer`.
 
 #### nHead
@@ -278,6 +274,7 @@ Number of layers. Maps to `llama_model_n_layer`.
 ```
 model.nHead: Int
 ```
+
 Number of attention heads. Maps to `llama_model_n_head`.
 
 #### vocab
@@ -285,6 +282,7 @@ Number of attention heads. Maps to `llama_model_n_head`.
 ```
 model.vocab: ref[Vocab]
 ```
+
 Get vocabulary. Maps to `llama_model_get_vocab`.
 
 #### metaValStr
@@ -292,6 +290,7 @@ Get vocabulary. Maps to `llama_model_get_vocab`.
 ```
 func model.metaValStr(key: CharsPtr, buf: CharsPtr, bufSize: ArchWord): Int
 ```
+
 Get metadata value as string. Maps to `llama_model_meta_val_str`.
 
 #### metaCount
@@ -299,6 +298,7 @@ Get metadata value as string. Maps to `llama_model_meta_val_str`.
 ```
 model.metaCount: Int
 ```
+
 Get metadata count. Maps to `llama_model_meta_count`.
 
 #### metaKeyByIndex
@@ -306,6 +306,7 @@ Get metadata count. Maps to `llama_model_meta_count`.
 ```
 func model.metaKeyByIndex(idx: Int, buf: CharsPtr, bufSize: ArchWord): Int
 ```
+
 Get metadata key by index. Maps to `llama_model_meta_key_by_index`.
 
 ### Context
@@ -354,6 +355,7 @@ Context creation parameters. Maps to `llama_context_params`.
 ```
 func Context.getDefaultParams(): Params
 ```
+
 Get default context parameters. Maps to `llama_context_default_params`.
 
 #### initFromModel
@@ -361,6 +363,7 @@ Get default context parameters. Maps to `llama_context_default_params`.
 ```
 func Context.initFromModel(model: ref[Model], params: Params): ref[Context]
 ```
+
 Create context from model. Maps to `llama_init_from_model`.
 
 #### free
@@ -368,6 +371,7 @@ Create context from model. Maps to `llama_init_from_model`.
 ```
 func Context.free(ctx: ref[Context])
 ```
+
 Free context resources. Maps to `llama_free`.
 
 #### attachThreadpool
@@ -375,6 +379,7 @@ Free context resources. Maps to `llama_free`.
 ```
 func ctx.attachThreadpool(tp: ref[Ggml.Threadpool], tpBatch: ref[Ggml.Threadpool])
 ```
+
 Attach thread pool. Maps to `llama_attach_threadpool`.
 
 #### detachThreadpool
@@ -382,6 +387,7 @@ Attach thread pool. Maps to `llama_attach_threadpool`.
 ```
 func ctx.detachThreadpool()
 ```
+
 Detach thread pool. Maps to `llama_detach_threadpool`.
 
 #### getEmbeddingsSeq
@@ -389,6 +395,7 @@ Detach thread pool. Maps to `llama_detach_threadpool`.
 ```
 func ctx.getEmbeddingsSeq(seqId: SeqId): ref[array[Float]]
 ```
+
 Get sequence embeddings. Maps to `llama_get_embeddings_seq`.
 
 #### getModel
@@ -396,6 +403,7 @@ Get sequence embeddings. Maps to `llama_get_embeddings_seq`.
 ```
 func ctx.getModel(): ref[Model]
 ```
+
 Get associated model. Maps to `llama_get_model`.
 
 #### nCtx
@@ -403,6 +411,7 @@ Get associated model. Maps to `llama_get_model`.
 ```
 ctx.nCtx: Word
 ```
+
 Get context size. Maps to `llama_n_ctx`.
 
 #### nBatch
@@ -410,6 +419,7 @@ Get context size. Maps to `llama_n_ctx`.
 ```
 ctx.nBatch: Word
 ```
+
 Get logical batch size. Maps to `llama_n_batch`.
 
 #### nUbatch
@@ -417,6 +427,7 @@ Get logical batch size. Maps to `llama_n_batch`.
 ```
 ctx.nUbatch: Word
 ```
+
 Get physical batch size. Maps to `llama_n_ubatch`.
 
 #### nSeqMax
@@ -424,6 +435,7 @@ Get physical batch size. Maps to `llama_n_ubatch`.
 ```
 ctx.nSeqMax: Word
 ```
+
 Get max sequences. Maps to `llama_n_seq_max`.
 
 #### getMemory
@@ -431,6 +443,7 @@ Get max sequences. Maps to `llama_n_seq_max`.
 ```
 func ctx.getMemory(): ptr[Memory]
 ```
+
 Get KV cache memory. Maps to `llama_get_memory`.
 
 #### poolingType
@@ -438,6 +451,7 @@ Get KV cache memory. Maps to `llama_get_memory`.
 ```
 ctx.poolingType: PoolingType
 ```
+
 Get pooling type. Maps to `llama_pooling_type`.
 
 #### encode
@@ -445,6 +459,7 @@ Get pooling type. Maps to `llama_pooling_type`.
 ```
 func ctx.encode(batch: Batch): Int
 ```
+
 Encode batch (for encoder models). Maps to `llama_encode`.
 
 #### decode
@@ -452,6 +467,7 @@ Encode batch (for encoder models). Maps to `llama_encode`.
 ```
 func ctx.decode(batch: Batch): Int
 ```
+
 Decode batch. Maps to `llama_decode`.
 
 #### getLogitsIth
@@ -459,6 +475,7 @@ Decode batch. Maps to `llama_decode`.
 ```
 func ctx.getLogitsIth(i: Int): ref[array[Float]]
 ```
+
 Get logits for token at index. Maps to `llama_get_logits_ith`.
 
 #### getEmbeddingsIth
@@ -466,6 +483,7 @@ Get logits for token at index. Maps to `llama_get_logits_ith`.
 ```
 func ctx.getEmbeddingsIth(i: Int): ref[array[Float]]
 ```
+
 Get embeddings for token at index. Maps to `llama_get_embeddings_ith`.
 
 #### stateSize
@@ -473,6 +491,7 @@ Get embeddings for token at index. Maps to `llama_get_embeddings_ith`.
 ```
 ctx.stateSize: ArchWord
 ```
+
 Get state size in bytes. Maps to `llama_state_get_size`.
 
 #### stateGetData
@@ -480,6 +499,7 @@ Get state size in bytes. Maps to `llama_state_get_size`.
 ```
 func ctx.stateGetData(dst: ref[array[Word[8]]], size: ArchWord): ArchWord
 ```
+
 Get state data. Maps to `llama_state_get_data`.
 
 #### stateSetData
@@ -487,6 +507,7 @@ Get state data. Maps to `llama_state_get_data`.
 ```
 func ctx.stateSetData(src: ref[array[Word[8]]], size: ArchWord): ArchWord
 ```
+
 Set state data. Maps to `llama_state_set_data`.
 
 #### stateLoadFile
@@ -494,6 +515,7 @@ Set state data. Maps to `llama_state_set_data`.
 ```
 func ctx.stateLoadFile(path: CharsPtr, tokensOut: ref[array[Token]], cap: ArchWord, outCount: ref[ArchWord]): Bool
 ```
+
 Load state from file. Maps to `llama_state_load_file`.
 
 #### stateSaveFile
@@ -501,6 +523,7 @@ Load state from file. Maps to `llama_state_load_file`.
 ```
 func ctx.stateSaveFile(path: CharsPtr, tokens: ref[array[Token]], count: ArchWord): Bool
 ```
+
 Save state to file. Maps to `llama_state_save_file`.
 
 #### setAdapterLora
@@ -508,6 +531,7 @@ Save state to file. Maps to `llama_state_save_file`.
 ```
 func ctx.setAdapterLora(ad: ref[Adapter], scale: Float): Int
 ```
+
 Apply LoRA adapter. Maps to `llama_set_adapter_lora`.
 
 #### removeAdapterLora
@@ -515,6 +539,7 @@ Apply LoRA adapter. Maps to `llama_set_adapter_lora`.
 ```
 func ctx.removeAdapterLora(ad: ref[Adapter]): Int
 ```
+
 Remove LoRA adapter. Maps to `llama_rm_adapter_lora`.
 
 #### clearAdapterLora
@@ -522,6 +547,7 @@ Remove LoRA adapter. Maps to `llama_rm_adapter_lora`.
 ```
 func ctx.clearAdapterLora()
 ```
+
 Clear all LoRA adapters. Maps to `llama_clear_adapter_lora`.
 
 #### perfContext
@@ -529,6 +555,7 @@ Clear all LoRA adapters. Maps to `llama_clear_adapter_lora`.
 ```
 ctx.perfContext: PerfContextData
 ```
+
 Get performance data. Maps to `llama_perf_context`.
 
 #### perfContextPrint
@@ -536,6 +563,7 @@ Get performance data. Maps to `llama_perf_context`.
 ```
 func ctx.perfContextPrint()
 ```
+
 Print performance data. Maps to `llama_perf_context_print`.
 
 #### perfContextReset
@@ -543,6 +571,7 @@ Print performance data. Maps to `llama_perf_context_print`.
 ```
 func ctx.perfContextReset()
 ```
+
 Reset performance counters. Maps to `llama_perf_context_reset`.
 
 ### Batch
@@ -562,6 +591,7 @@ Token batch for processing. Maps to `llama_batch`.
 ```
 func Batch.getOne(tokens: ref[array[Token]], nTokens: Int): Batch
 ```
+
 Create batch from token array. Maps to `llama_batch_get_one`.
 
 #### init
@@ -569,6 +599,7 @@ Create batch from token array. Maps to `llama_batch_get_one`.
 ```
 func Batch.init(nTokens: Int, embd: Int, nSeqMax: Int): Batch
 ```
+
 Initialize empty batch. Maps to `llama_batch_init`.
 
 ### Sampler
@@ -586,6 +617,7 @@ Sampler chain parameters. Maps to `llama_sampler_chain_params`.
 ```
 func Sampler.init(iface: ptr, ctx: ptr): ref[Sampler]
 ```
+
 Initialize custom sampler. Maps to `llama_sampler_init`.
 
 #### chainInit
@@ -593,6 +625,7 @@ Initialize custom sampler. Maps to `llama_sampler_init`.
 ```
 func Sampler.chainInit(params: ChainParams): ref[Sampler]
 ```
+
 Create sampler chain. Maps to `llama_sampler_chain_init`.
 
 #### initGreedy
@@ -600,6 +633,7 @@ Create sampler chain. Maps to `llama_sampler_chain_init`.
 ```
 func Sampler.initGreedy(): ref[Sampler]
 ```
+
 Create greedy sampler. Maps to `llama_sampler_init_greedy`.
 
 #### initDist
@@ -607,6 +641,7 @@ Create greedy sampler. Maps to `llama_sampler_init_greedy`.
 ```
 func Sampler.initDist(seed: Word): ref[Sampler]
 ```
+
 Create distribution sampler. Maps to `llama_sampler_init_dist`.
 
 #### initTopK
@@ -614,6 +649,8 @@ Create distribution sampler. Maps to `llama_sampler_init_dist`.
 ```
 func Sampler.initTopK(k: Int): ref[Sampler]
 ```
+
+
 Create top-k sampler. Maps to `llama_sampler_init_top_k`.
 
 #### initTopP
@@ -621,6 +658,7 @@ Create top-k sampler. Maps to `llama_sampler_init_top_k`.
 ```
 func Sampler.initTopP(p: Float, minKeep: ArchWord): ref[Sampler]
 ```
+
 Create top-p (nucleus) sampler. Maps to `llama_sampler_init_top_p`.
 
 #### initPenalties
@@ -628,6 +666,7 @@ Create top-p (nucleus) sampler. Maps to `llama_sampler_init_top_p`.
 ```
 func Sampler.initPenalties(penaltyLastN: Int, penaltyRepeat: Float, penaltyFreq: Float, penaltyPresent: Float): ref[Sampler]
 ```
+
 Create penalty sampler. Maps to `llama_sampler_init_penalties`.
 
 * `penaltyLastN`: Last n tokens to penalize (0 = disable, -1 = context size)
@@ -640,6 +679,7 @@ Create penalty sampler. Maps to `llama_sampler_init_penalties`.
 ```
 func Sampler.clone(s: ref[Sampler]): ref[Sampler]
 ```
+
 Clone sampler. Maps to `llama_sampler_clone`.
 
 #### free
@@ -647,6 +687,7 @@ Clone sampler. Maps to `llama_sampler_clone`.
 ```
 func Sampler.free(s: ref[Sampler])
 ```
+
 Free sampler resources. Maps to `llama_sampler_free`.
 
 #### reset
@@ -654,6 +695,7 @@ Free sampler resources. Maps to `llama_sampler_free`.
 ```
 func sampler.reset()
 ```
+
 Reset sampler state. Maps to `llama_sampler_reset`.
 
 #### sample
@@ -661,6 +703,7 @@ Reset sampler state. Maps to `llama_sampler_reset`.
 ```
 func sampler.sample(ctx: ref[Context], idx: Int): Token
 ```
+
 Sample next token. Maps to `llama_sampler_sample`.
 
 #### name
@@ -668,6 +711,7 @@ Sample next token. Maps to `llama_sampler_sample`.
 ```
 sampler.name: CharsPtr
 ```
+
 Get sampler name. Maps to `llama_sampler_name`.
 
 #### accept
@@ -675,6 +719,7 @@ Get sampler name. Maps to `llama_sampler_name`.
 ```
 func sampler.accept(token: Token)
 ```
+
 Accept token for tracking. Maps to `llama_sampler_accept`.
 
 #### apply
@@ -682,6 +727,7 @@ Accept token for tracking. Maps to `llama_sampler_accept`.
 ```
 func sampler.apply(cand: ref[TokenDataArray])
 ```
+
 Apply sampler to candidates. Maps to `llama_sampler_apply`.
 
 #### chainAdd
@@ -689,6 +735,7 @@ Apply sampler to candidates. Maps to `llama_sampler_apply`.
 ```
 func sampler.chainAdd(s: ref[Sampler])
 ```
+
 Add sampler to chain. Maps to `llama_sampler_chain_add`.
 
 #### chainGet
@@ -696,6 +743,7 @@ Add sampler to chain. Maps to `llama_sampler_chain_add`.
 ```
 func sampler.chainGet(idx: Int): ref[Sampler]
 ```
+
 Get sampler from chain. Maps to `llama_sampler_chain_get`.
 
 #### chainCount
@@ -703,6 +751,7 @@ Get sampler from chain. Maps to `llama_sampler_chain_get`.
 ```
 sampler.chainCount: Int
 ```
+
 Get chain length. Maps to `llama_sampler_chain_n`.
 
 #### chainRemove
@@ -710,6 +759,7 @@ Get chain length. Maps to `llama_sampler_chain_n`.
 ```
 func sampler.chainRemove(idx: Int): ref[Sampler]
 ```
+
 Remove sampler from chain. Maps to `llama_sampler_chain_remove`.
 
 #### perfSampler
@@ -717,6 +767,7 @@ Remove sampler from chain. Maps to `llama_sampler_chain_remove`.
 ```
 sampler.perfSampler: PerfSamplerData
 ```
+
 Get performance data. Maps to `llama_perf_sampler`.
 
 #### perfSamplerPrint
@@ -724,6 +775,7 @@ Get performance data. Maps to `llama_perf_sampler`.
 ```
 func sampler.perfSamplerPrint()
 ```
+
 Print performance data. Maps to `llama_perf_sampler_print`.
 
 #### perfSamplerReset
@@ -731,6 +783,7 @@ Print performance data. Maps to `llama_perf_sampler_print`.
 ```
 func sampler.perfSamplerReset()
 ```
+
 Reset performance counters. Maps to `llama_perf_sampler_reset`.
 
 ### Vocab
@@ -742,6 +795,7 @@ Model vocabulary. Maps to `llama_vocab`.
 ```
 func vocab.tokenToPiece(token: Token, buf: CharsPtr, length: Int, lstrip: Int, special: Bool): Int
 ```
+
 Convert token to text. Maps to `llama_token_to_piece`.
 
 #### eos
@@ -749,6 +803,7 @@ Convert token to text. Maps to `llama_token_to_piece`.
 ```
 vocab.eos: Token
 ```
+
 Get end-of-sequence token. Maps to `llama_vocab_eos`.
 
 #### isEog
@@ -756,6 +811,7 @@ Get end-of-sequence token. Maps to `llama_vocab_eos`.
 ```
 func vocab.isEog(token: Token): Bool
 ```
+
 Check if token is end-of-generation. Maps to `llama_vocab_is_eog`.
 
 ### Memory
@@ -767,6 +823,7 @@ KV cache memory management. Maps to `llama_memory`.
 ```
 func memory.clear(data: Bool)
 ```
+
 Clear KV cache. Maps to `llama_memory_clear`.
 
 #### seqRemove
@@ -774,6 +831,7 @@ Clear KV cache. Maps to `llama_memory_clear`.
 ```
 func memory.seqRemove(seq: SeqId, p0: Pos, p1: Pos): Bool
 ```
+
 Remove sequence range. Maps to `llama_memory_seq_rm`.
 
 #### seqCopy
@@ -781,6 +839,7 @@ Remove sequence range. Maps to `llama_memory_seq_rm`.
 ```
 func memory.seqCopy(src: SeqId, dst: SeqId, p0: Pos, p1: Pos)
 ```
+
 Copy sequence range. Maps to `llama_memory_seq_cp`.
 
 #### seqKeep
@@ -788,6 +847,7 @@ Copy sequence range. Maps to `llama_memory_seq_cp`.
 ```
 func memory.seqKeep(seq: SeqId)
 ```
+
 Keep only specified sequence. Maps to `llama_memory_seq_keep`.
 
 #### seqAdd
@@ -795,6 +855,7 @@ Keep only specified sequence. Maps to `llama_memory_seq_keep`.
 ```
 func memory.seqAdd(seq: SeqId, p0: Pos, p1: Pos, delta: Pos)
 ```
+
 Add position delta to sequence. Maps to `llama_memory_seq_add`.
 
 #### seqDiv
@@ -802,6 +863,7 @@ Add position delta to sequence. Maps to `llama_memory_seq_add`.
 ```
 func memory.seqDiv(seq: SeqId, p0: Pos, p1: Pos, d: Int)
 ```
+
 Divide positions in sequence. Maps to `llama_memory_seq_div`.
 
 ### Adapter
@@ -813,6 +875,7 @@ LoRA adapter support. Maps to `llama_adapter_lora`.
 ```
 func Adapter.loraInit(model: ref[Model], path: CharsPtr): ref[Adapter]
 ```
+
 Load LoRA adapter. Maps to `llama_adapter_lora_init`.
 
 #### loraFree
@@ -820,11 +883,10 @@ Load LoRA adapter. Maps to `llama_adapter_lora_init`.
 ```
 func Adapter.loraFree(ad: ref[Adapter])
 ```
+
 Free LoRA adapter. Maps to `llama_adapter_lora_free`.
 
 ## Global Functions
-
----
 
 ### Backend Management
 
@@ -833,6 +895,7 @@ Free LoRA adapter. Maps to `llama_adapter_lora_free`.
 ```
 func backendInit()
 ```
+
 Initialize llama backend. Maps to `llama_backend_init`.
 
 #### backendFree
@@ -840,6 +903,7 @@ Initialize llama backend. Maps to `llama_backend_init`.
 ```
 func backendFree()
 ```
+
 Free llama backend. Maps to `llama_backend_free`.
 
 #### numaInit
@@ -847,6 +911,7 @@ Free llama backend. Maps to `llama_backend_free`.
 ```
 func numaInit(strategy: Ggml.NumaStrategy)
 ```
+
 Initialize NUMA. Maps to `llama_numa_init`.
 
 ### System Information
@@ -856,6 +921,7 @@ Initialize NUMA. Maps to `llama_numa_init`.
 ```
 func timeUs(): Int[64]
 ```
+
 Get current time in microseconds. Maps to `llama_time_us`.
 
 #### maxDevices
@@ -863,6 +929,7 @@ Get current time in microseconds. Maps to `llama_time_us`.
 ```
 func maxDevices(): ArchWord
 ```
+
 Get maximum number of devices. Maps to `llama_max_devices`.
 
 #### maxParallelSequences
@@ -870,6 +937,7 @@ Get maximum number of devices. Maps to `llama_max_devices`.
 ```
 func maxParallelSequences(): ArchWord
 ```
+
 Get max parallel sequences. Maps to `llama_max_parallel_sequences`.
 
 #### supportsMmap
@@ -877,6 +945,7 @@ Get max parallel sequences. Maps to `llama_max_parallel_sequences`.
 ```
 func supportsMmap(): Bool
 ```
+
 Check mmap support. Maps to `llama_supports_mmap`.
 
 #### supportsMlock
@@ -884,6 +953,7 @@ Check mmap support. Maps to `llama_supports_mmap`.
 ```
 func supportsMlock(): Bool
 ```
+
 Check mlock support. Maps to `llama_supports_mlock`.
 
 #### supportsGpuOffload
@@ -891,6 +961,7 @@ Check mlock support. Maps to `llama_supports_mlock`.
 ```
 func supportsGpuOffload(): Bool
 ```
+
 Check GPU offload support. Maps to `llama_supports_gpu_offload`.
 
 #### supportsRpc
@@ -898,6 +969,7 @@ Check GPU offload support. Maps to `llama_supports_gpu_offload`.
 ```
 func supportsRpc(): Bool
 ```
+
 Check RPC support. Maps to `llama_supports_rpc`.
 
 #### printSystemInfo
@@ -905,6 +977,7 @@ Check RPC support. Maps to `llama_supports_rpc`.
 ```
 func printSystemInfo(): CharsPtr
 ```
+
 Get system info string. Maps to `llama_print_system_info`.
 
 ### Tokenization
@@ -912,15 +985,23 @@ Get system info string. Maps to `llama_print_system_info`.
 #### tokenize
 
 ```
-func tokenize(vocab: ref[Vocab], text: CharsPtr, textLen: Int, tokens: ref[array[Token]], nTokensMax: Int, addSpecial: Bool, parseSpecial: Bool): Int
+func tokenize(
+    vocab: ref[Vocab], text: CharsPtr, textLen: Int, tokens: ref[array[Token]],
+    nTokensMax: Int, addSpecial: Bool, parseSpecial: Bool
+): Int
 ```
+
 Convert text to tokens. Returns the number of tokens written. Maps to `llama_tokenize`.
 
 #### detokenize
 
 ```
-func detokenize(vocab: ref[Vocab], tokens: ref[array[Token]], nTokens: Int, text: CharsPtr, textLenMax: Int, removeSpecial: Bool, unparseSpecial: Bool): Int
+func detokenize(
+    vocab: ref[Vocab], tokens: ref[array[Token]], nTokens: Int, text: CharsPtr,
+    textLenMax: Int, removeSpecial: Bool, unparseSpecial: Bool
+): Int
 ```
+
 Convert tokens to text. Returns the number of characters written. Maps to `llama_detokenize`.
 
 ### Chat Templates
@@ -928,8 +1009,12 @@ Convert tokens to text. Returns the number of characters written. Maps to `llama
 #### chatApplyTemplate
 
 ```
-func chatApplyTemplate(tmpl: CharsPtr, chat: ref[array[ChatMessage]], nMsg: ArchWord, addAssistant: Bool, buf: CharsPtr, bufLen: Int): Int
+func chatApplyTemplate(
+    tmpl: CharsPtr, chat: ref[array[ChatMessage]], nMsg: ArchWord,
+    addAssistant: Bool, buf: CharsPtr, bufLen: Int
+): Int
 ```
+
 Apply chat template to messages. Pass `0` for `tmpl` to use the model's default template. Returns the number of characters written. Maps to `llama_chat_apply_template`.
 
 #### chatBuiltinTemplates
@@ -937,6 +1022,7 @@ Apply chat template to messages. Pass `0` for `tmpl` to use the model's default 
 ```
 func chatBuiltinTemplates(out: ref[CharsPtr], len: ArchWord): Int
 ```
+
 Get built-in template names. Maps to `llama_chat_builtin_templates`.
 
 ### Logging
@@ -946,11 +1032,10 @@ Get built-in template names. Maps to `llama_chat_builtin_templates`.
 ```
 func logSet(cb: ptr[function(level: Int, text: CharsPtr, userData: ptr)], userData: ptr)
 ```
+
 Set logging callback. Maps to `llama_log_set`.
 
-## Examples
-
----
+## More Examples
 
 ### Text Completion
 
@@ -1017,8 +1102,6 @@ Model.free(model);
 ```
 
 ## License
-
----
 
 Copyright (c) 2023-2024 The ggml authors
 Copyright (c) 2026 Alusus Software Ltd. for the Alusus language bindings.
