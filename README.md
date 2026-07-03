@@ -602,6 +602,14 @@ func Batch.init(nTokens: Int, embd: Int, nSeqMax: Int): Batch
 
 Initialize empty batch. Maps to `llama_batch_init`.
 
+#### free
+
+```
+func Batch.free(batch: Batch)
+```
+
+Free batch resources. Maps to `llama_batch_free`.
+
 ### Sampler
 
 Token sampler for generation. Maps to `llama_sampler`.

@@ -1021,6 +1021,22 @@ func Batch.init(nTokens: Int, embd: Int, nSeqMax: Int): Batch
 
 تهيئة دفعة فارغة. يقابل `llama_batch_init`.
 
+#### حرر / free
+
+```
+دالة دفـعة.حرر(دفعة: دفـعة)
+```
+
+<div dir=ltr>
+
+```
+func Batch.free(batch: Batch)
+```
+
+</div>
+
+تحرير موارد الدفعة. يقابل `llama_batch_free`.
+
 ### مـعاين / Sampler
 
 معاين رموز للتوليد. يقابل `llama_sampler`.

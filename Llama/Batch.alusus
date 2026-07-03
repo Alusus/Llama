@@ -13,5 +13,8 @@
 
         @expname[llama_batch_init]
         func init(nTokens: Int, embd: Int, nSeqMax: Int): Batch;
+
+        @expname[llama_batch_free]
+        func free(batch: Batch);
     }
 }
