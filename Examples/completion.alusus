@@ -8,7 +8,6 @@ use Llama;
 // Download the model from https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/blob/main/tinyllama-1.1b-chat-v1.0.Q2_K.gguf
 // This is a tiny model, so expect a lot of hallucination
 
-Ggml.Backend.cpuLoad();
 Ggml.Backend.vkLoad();
 
 def model: ref[Model](Model.load("tinyllama-1.1b-chat-v1.0.Q2_K.gguf", Model.getDefaultParams()));

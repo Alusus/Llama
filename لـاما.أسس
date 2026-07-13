@@ -289,6 +289,7 @@
 
     // الدالات العمومية
 
+    عرف هات_اعتماديات_البناء: لقب getBuildDependencies؛
     عرف هيئ_المشغل: لقب backendInit؛
     عرف حرر_المشغل: لقب backendFree؛
     عرف هيئ_نوما: لقب numaInit؛

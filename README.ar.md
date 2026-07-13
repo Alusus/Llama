@@ -96,12 +96,16 @@ Model.free(model);
 
 ## دعم معالج الرسوميات
 
-حدد متغير البيئة `GGML_USE_VULKAN` بقيمة `1` قبل التشغيل لتفعيل تسريع Vulkan:
+لتفعيل مشغل فلكان، مرر الخيار `ججمل_مكن_فلكان` (`ggml_enable_vulkan`) لمترجم الأسس أثناء تشغيل أو ترجمة برنامجك:
+
+```
+الأسس --خيار ججمل_مكن_فلكان برنامجي.أسس
+```
 
 <div dir=ltr>
 
 ```
-GGML_USE_VULKAN=1 alusus your_script.alusus
+alusus --opt ggml_enable_vulkan my_app.alusus
 ```
 
 </div>
@@ -1581,6 +1585,22 @@ func Adapter.loraFree(ad: ref[Adapter])
 تحرير موائم LoRA. يقابل `llama_adapter_lora_free`.
 
 ## الدالات العمومية
+
+### هات_اعتماديات_البناء (getBuildDependencies)
+
+```
+دالة هات_اعتماديات_البناء(): مـصفوفة[نـص]؛
+```
+
+<div dir=ltr>
+
+```
+func getBuildDependencies(): Array[String];
+```
+
+</div>
+
+دالة تعيد مصفوفة من المكتبات و الحزم الضرورية لبناء نسخة تنفيذية من التطبيق.
 
 ### إدارة المشغل
 

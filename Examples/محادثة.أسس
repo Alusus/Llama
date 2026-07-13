@@ -12,7 +12,6 @@
 // نزل النموذج من https://huggingface.co/QuantFactory/jais-adapted-7b-chat-GGUF/blob/main/jais-adapted-7b-chat.Q4_K_M.gguf
 // نموذج Jais مُحسَّن للغة العربية
 
-جـجمل.مـشغل.حمل_للمعالج()؛
 جـجمل.مـشغل.حمل_لفلكان()؛
 
 عرف نموذج: سند[نـموذج](نـموذج.حمل("jais-adapted-7b-chat.Q4_K_M.gguf"، نـموذج.هات_معطيات_افتراضية()))؛

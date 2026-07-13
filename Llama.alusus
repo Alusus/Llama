@@ -1,16 +1,11 @@
-import "Srl/Memory.alusus";
-import "Srl/Array.alusus";
-import "Srl/String.alusus";
+import "Srl/Memory";
+import "Srl/Array";
+import "Srl/String";
+import "ProcessExt";
 import "Apm";
 Apm.importPackage("Alusus/Ggml@0.2");
 
-CharsPtr(Srl.System.getEnv("GGML_USE_VULKAN")).{
-    if this != 0 and Srl.String.isEqual(this, "1") {
-        Core.importFile("Bin/libllama-vulkan.so");
-    } else {
-        Core.importFile("Bin/libllama-cpu.so");
-    }
-}
+import "Bin/libllama.so.0";
 
 import "Llama/Context";
 import "Llama/Batch";
@@ -21,6 +16,13 @@ import "Llama/Adapter";
 import "Llama/Memory";
 
 @merge module Llama {
+    func getBuildDependencies(): Array[String] {
+        def sourceDir: getThisSourceDirectory[];
+        def deps: Array[String] = Ggml.getBuildDependencies();
+        deps.add(String(sourceDir) + "Bin/libllama.so.0");
+        return deps;
+    }
+
     // Basic Types
 
     def Token: alias Int;

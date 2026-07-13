@@ -48,10 +48,11 @@ Model.free(model);
 
 ## GPU Support
 
-Set the `GGML_USE_VULKAN` environment variable to `1` before running to enable Vulkan GPU acceleration:
+To enable Vulkan backend, pass the `ggml_enable_vulkan` option to Alusus compiler when running/compiling
+your app:
 
 ```
-GGML_USE_VULKAN=1 alusus your_script.alusus
+alusus --opt ggml_enable_vulkan my_app.alusus
 ```
 
 ## API Reference
@@ -895,6 +896,15 @@ func Adapter.loraFree(ad: ref[Adapter])
 Free LoRA adapter. Maps to `llama_adapter_lora_free`.
 
 ## Global Functions
+
+### getBuildDependencies
+
+```
+func getBuildDependencies(): Array[String];
+```
+
+A function that return an array of libraries and packages required to build a binary version of the
+application.
 
 ### Backend Management
 
